@@ -161,31 +161,33 @@ function OpenRiftInstance(client, tier, npc)
     eq.set_data(rift.key_tier(instance_id), tostring(tier), expires)
     eq.set_data(rift.key_start(instance_id), tostring(os.time()), expires)
 
-    -- 4. Assign everyone to the instance (required before they can zone in)
+    -- 4. Who goes: the hailer and every group member standing here in The Void. Members anywhere
+    --    else (including characters without Void access) take no part and aren't assigned.
+    local party = { client }
     local group = client:GetGroup()
     if client:IsGrouped() and group.valid then
-        eq.assign_group_to_instance(instance_id)
-    else
-        eq.assign_to_instance(instance_id)
+        for i = 0, 5 do
+            local member = group:GetMember(i)
+            if member.valid and member:IsClient() and member:GetID() ~= client:GetID() then
+                table.insert(party, member:CastToClient())
+            end
+        end
+    end
+
+    for _, member in ipairs(party) do
+        eq.assign_to_instance_by_char_id(instance_id, member:CharacterID())
     end
 
     npc:Say(string.format("The Fabric parts. Tier %d: %s. Go, and do not linger once it begins to close.", tier, zone.name))
 
-    -- 5. Move the player and every group member who is here in the hub
+    -- 5. Move them in
     local active = string.format("%d,%d,%s,%s,%s,%s", instance_id, zone.zone_id, zone.x, zone.y, zone.z, zone.h)
     local function send(member)
         eq.set_data(rift.key_active(member:CharacterID()), active, expires)
         member:MovePCInstance(zone.zone_id, instance_id, zone.x, zone.y, zone.z, zone.h)
     end
 
-    if client:IsGrouped() and group.valid then
-        for i = 0, 5 do
-            local member = group:GetMember(i)
-            if member.valid and member:IsClient() then
-                send(member:CastToClient())
-            end
-        end
-    else
-        send(client)
+    for _, member in ipairs(party) do
+        send(member)
     end
 end

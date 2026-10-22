@@ -3,7 +3,7 @@
 #   - a rift archetype spawn (spawngroup rift_archetypes) at EVERY normal spawn location, 180s +-30s
 #     respawn, keeping each location's heading and path grid
 #   - the rift controller at the entry point
-#   - doors, zone points and ground spawns copied from version 0
+#   - doors (unlocked), zone points and ground spawns copied from version 0
 #   - a version-1 zone row: no flag / level / status requirement, entry point as the safe spot
 import json, os, subprocess, sys
 
@@ -36,9 +36,10 @@ def columns(table, skip):
     return [r[0] for r in rows if r[0] not in skip]
 
 
-def copy_version(table, zone_col, zone_val, cols):
+def copy_version(table, zone_col, zone_val, cols, overrides=None):
+    overrides = dict(overrides or {}, version=str(VERSION))
     names = ', '.join(f'`{c}`' for c in cols)
-    values = ', '.join(str(VERSION) if c == 'version' else f'`{c}`' for c in cols)
+    values = ', '.join(overrides.get(c, f'`{c}`') for c in cols)
     return (f"DELETE FROM `{table}` WHERE `{zone_col}` = {zone_val} AND `version` = {VERSION};\n"
             f"INSERT INTO `{table}` ({names}) SELECT {values} FROM `{table}` "
             f"WHERE `{zone_col}` = {zone_val} AND `version` = 0;\n")
@@ -76,7 +77,8 @@ for sn in ZONES:
     sql.append(f"INSERT INTO spawn2 (spawngroupID, zone, version, x, y, z, heading, respawntime, variance, pathgrid, "
                f"path_when_zone_idle, _condition, cond_value, animation, min_expansion, max_expansion) "
                f"VALUES ({CONTROLLER_GROUP}, {q}, {VERSION}, {z['x']}, {z['y']}, {z['z']}, 0, 30, 0, 0, 0, 0, 1, 0, -1, -1);")
-    sql.append(copy_version('doors', 'zone', q, door_cols).rstrip())
+    # Rifts can't expect players to carry zone keys: copied doors are unlocked
+    sql.append(copy_version('doors', 'zone', q, door_cols, {'keyitem': '0', 'lockpick': '0'}).rstrip())
     sql.append(copy_version('zone_points', 'zone', q, zp_cols).rstrip())
     sql.append(copy_version('ground_spawns', 'zoneid', z['id'], gs_cols).rstrip())
     # Zone row for the rift version: no entry requirements, rift entry point as the safe spot
