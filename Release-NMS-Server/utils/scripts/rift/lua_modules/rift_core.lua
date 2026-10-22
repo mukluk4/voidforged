@@ -1,0 +1,330 @@
+-- ============================================================================
+-- GREATER RIFT CORE MODULE (rift_core.lua)
+-- Deploy to: quests/lua_modules/rift_core.lua
+--
+-- Every rift script does `local rift = require("rift_core")`.
+-- EQEmu runs each quest script in its own sandbox, so a global function
+-- defined in one script is NOT visible from another. A require'd module is
+-- shared by every script in the same zone process, and each instance runs in
+-- its own zone process, so the state below is effectively per-rift.
+-- ============================================================================
+
+local rift = {}
+
+-- ----------------------------------------------------------------------------
+-- Configuration
+-- ----------------------------------------------------------------------------
+rift.HUB_ZONE_ID = 459            -- thevoida (The Void), confirmed in zone table
+rift.HUB_X, rift.HUB_Y, rift.HUB_Z, rift.HUB_H = 0, 0, 0, 0
+
+rift.INSTANCE_VERSION = 1         -- spawn2.version that holds the rift spawn set
+rift.TIME_LIMIT       = 900       -- seconds to kill the Guardian
+rift.INSTANCE_GRACE   = 180       -- extra instance life so players can walk out after a fail
+rift.TARGET_PROGRESS  = 10000     -- 100.00%
+rift.MAX_TIER         = 500       -- hard cap; below it the ceiling is each player's progression
+
+-- All rift NPCs live in the 1200000-1200099 block (created by rift_setup.sql Part 0)
+rift.NPC = {
+    CONTROLLER = 1200000,         -- invisible, untargetable zone controller
+    GUARDIAN   = 1200001,
+    PYLON      = 1200005,
+    PORTAL     = 1200009,
+    VENDOR     = 1200010,         -- Chronal_Quartermaster (The Void)
+    KEEPER     = 1200011,         -- The_Rift_Keeper (The Void)
+    MELEE      = 1200020,
+    CASTER     = 1200021,
+    DISRUPT    = 1200022,
+    ELITE      = 1200023,
+}
+
+rift.PROGRESS = { TRASH = 100, ELITE = 400 }   -- 1.00% / 4.00%
+
+-- Clear reward: alternate currency, spent at the Void vendor.
+-- amount = BASE + PER_TIER * tier, +SPEED_BONUS% if cleared in under SPEED_SECONDS
+rift.REWARD = {
+    CURRENCY_ID   = 2,       -- alternate_currency.id (1 and 6 are taken on this server)
+    CURRENCY_NAME = "Chronal Shards",
+    BASE          = 5,
+    PER_TIER      = 2,
+    SPEED_SECONDS = 600,
+    SPEED_BONUS   = 25,
+}
+
+local PYLON_THRESHOLDS = { 25, 50, 75 }
+local TIME_WARNINGS    = { 720, 540, 360, 180, 60 }
+local PROGRESS_STEP    = 5      -- announce progress every 5%
+
+-- Data bucket keys (all written with an expiry so they clean themselves up)
+function rift.key_tier(instance_id)  return "gr_tier_"   .. instance_id end
+function rift.key_start(instance_id) return "gr_start_"  .. instance_id end
+function rift.key_active(char_id)    return "gr_active_" .. char_id end
+function rift.key_deepest(char_id)   return "gr_deepest_" .. char_id end -- no expiry: progression
+
+-- ----------------------------------------------------------------------------
+-- Per-instance state
+-- ----------------------------------------------------------------------------
+local state = { instance_id = -1 }
+
+local function load_state(instance_id)
+    state = {
+        instance_id   = instance_id,
+        tier          = tonumber(eq.get_data(rift.key_tier(instance_id))) or 1,
+        start_time    = tonumber(eq.get_data(rift.key_start(instance_id))) or os.time(),
+        progress      = 0,
+        last_step     = 0,
+        is_active     = false,
+        boss_spawned  = false,
+        allow_spawn   = false,
+        pylons_done   = {},
+        warnings_done = {},
+    }
+end
+
+local function ensure_state()
+    local instance_id = eq.get_zone_instance_id()
+    if state.instance_id ~= instance_id then
+        load_state(instance_id)
+    end
+end
+
+-- ----------------------------------------------------------------------------
+-- Helpers
+-- ----------------------------------------------------------------------------
+local function each_client(fn)
+    for client in eq.get_entity_list():GetClientList().entries do
+        if client.valid then fn(client) end
+    end
+end
+
+local function first_client()
+    for client in eq.get_entity_list():GetClientList().entries do
+        if client.valid then return client end
+    end
+    return nil
+end
+
+-- Message every player in this instance (one zone process == one instance)
+function rift.announce(color, msg)
+    each_client(function(client) client:Message(color, msg) end)
+end
+
+-- Progression: a character can open any tier up to one past their deepest clear
+function rift.get_deepest(char_id)
+    return tonumber(eq.get_data(rift.key_deepest(char_id))) or 0
+end
+
+function rift.max_tier(char_id)
+    return math.min(rift.get_deepest(char_id) + 1, rift.MAX_TIER)
+end
+
+function rift.is_allowed_tier(char_id, tier)
+    return tier ~= nil and tier >= 1 and tier <= rift.max_tier(char_id)
+end
+
+-- A clear only counts toward a character's own progression if they could have opened that tier
+-- themselves; being carried deeper pays the same rewards but unlocks nothing
+local function record_clear(client, tier)
+    local deepest = rift.get_deepest(client:CharacterID())
+    if tier == deepest + 1 then
+        eq.set_data(rift.key_deepest(client:CharacterID()), tostring(tier))
+        client:Message(15, string.format("Your deepest Fracture is now Tier %d. Tier %d is open to you.", tier, math.min(tier + 1, rift.MAX_TIER)))
+    elseif tier > deepest + 1 then
+        client:Message(15, string.format("This Fracture was beyond your own reach; your deepest remains Tier %d.", deepest))
+    end
+end
+
+-- True only inside an instance the Rift Keeper created
+function rift.in_rift()
+    local instance_id = eq.get_zone_instance_id()
+    return instance_id > 0 and eq.get_data(rift.key_tier(instance_id)) ~= ""
+end
+
+function rift.get_tier()
+    ensure_state()
+    return state.tier
+end
+
+function rift.remaining()
+    ensure_state()
+    return state.start_time + rift.TIME_LIMIT - os.time()
+end
+
+function rift.percent()
+    ensure_state()
+    return math.floor(state.progress * 100 / rift.TARGET_PROGRESS)
+end
+
+-- Archetypes that (re)spawn after the Guardian is up should remove themselves
+function rift.spawn_blocked()
+    ensure_state()
+    return state.boss_spawned and not state.allow_spawn
+end
+
+-- ----------------------------------------------------------------------------
+-- Stat scaling (shared by trash, elites and the Guardian)
+-- ----------------------------------------------------------------------------
+function rift.apply_tier_scaling(npc, tier, is_boss)
+    local steps = (tier or 1) - 1
+    if steps <= 0 then return end
+
+    local hp_step, dmg_step = 0.15, 0.08
+    if is_boss then
+        hp_step, dmg_step = 0.25, 0.10
+    end
+
+    local hp_factor  = 1.0 + hp_step * steps
+    local dmg_factor = 1.0 + dmg_step * steps
+    local def_factor = 1.0 + 0.03 * steps
+
+    npc:ModifyNPCStat("max_hp",  tostring(math.floor(npc:GetMaxHP() * hp_factor)))
+    npc:ModifyNPCStat("min_hit", tostring(math.floor(npc:GetMinDMG() * dmg_factor)))
+    npc:ModifyNPCStat("max_hit", tostring(math.floor(npc:GetMaxDMG() * dmg_factor)))
+    -- Spell damage (nukes, DoTs, champion and Guardian AoEs) scales like melee damage
+    npc:ModifyNPCStat("spellscale", tostring(math.floor(100 * dmg_factor)))
+    npc:ModifyNPCStat("ac",      tostring(math.floor(npc:GetAC() * def_factor)))
+    npc:ModifyNPCStat("mr",      tostring(math.floor(npc:GetMR() * def_factor)))
+    npc:ModifyNPCStat("fr",      tostring(math.floor(npc:GetFR() * def_factor)))
+    npc:ModifyNPCStat("cr",      tostring(math.floor(npc:GetCR() * def_factor)))
+    npc:ModifyNPCStat("pr",      tostring(math.floor(npc:GetPR() * def_factor)))
+    npc:ModifyNPCStat("dr",      tostring(math.floor(npc:GetDR() * def_factor)))
+    npc:Heal()
+end
+
+-- ----------------------------------------------------------------------------
+-- Rift lifecycle (driven by the controller NPC's timer)
+-- ----------------------------------------------------------------------------
+function rift.start()
+    ensure_state()
+    local remaining = rift.remaining()
+    if remaining <= 0 then return false end
+
+    state.is_active = true
+    rift.announce(15, string.format("Greater Rift Tier %d initiated! The Chronal Fabric will hold for %d minute(s).",
+        state.tier, math.ceil(remaining / 60)))
+    return true
+end
+
+-- Returns false once the rift is over so the controller can stop its timer
+function rift.tick()
+    ensure_state()
+    if not state.is_active then return false end
+
+    local remaining = rift.remaining()
+
+    for _, t in ipairs(TIME_WARNINGS) do
+        if remaining <= t and not state.warnings_done[t] then
+            state.warnings_done[t] = true
+            rift.announce(13, string.format("Greater Rift: %d minute(s) remaining! Progress: %d%%",
+                math.ceil(remaining / 60), rift.percent()))
+        end
+    end
+
+    if remaining <= 0 then
+        rift.fail()
+        return false
+    end
+    return true
+end
+
+-- Called from a dying archetype; x/y/z/h is where it died
+function rift.add_progress(amount, x, y, z, h)
+    ensure_state()
+    if not state.is_active or state.boss_spawned then return end
+
+    state.progress = math.min(rift.TARGET_PROGRESS, state.progress + amount)
+    local percent = math.floor(state.progress * 100 / rift.TARGET_PROGRESS)
+
+    for _, threshold in ipairs(PYLON_THRESHOLDS) do
+        if percent >= threshold and not state.pylons_done[threshold] then
+            state.pylons_done[threshold] = true
+            eq.spawn2(rift.NPC.PYLON, 0, 0, x, y, z, h)
+        end
+    end
+
+    if state.progress >= rift.TARGET_PROGRESS then
+        rift.spawn_guardian(x, y, z, h)
+        return
+    end
+
+    local step = math.floor(percent / PROGRESS_STEP)
+    if step > state.last_step then
+        state.last_step = step
+        rift.announce(15, string.format("Greater Rift progress: %d%%", step * PROGRESS_STEP))
+    end
+end
+
+function rift.spawn_guardian(x, y, z, h)
+    state.boss_spawned = true
+    rift.announce(15, "An Anachronism tears through the Fabric! Defeat the Rift Guardian to seal the Rift!")
+
+    -- Clear the remaining trash and any unclaimed pylons
+    for _, id in ipairs({ rift.NPC.MELEE, rift.NPC.CASTER, rift.NPC.DISRUPT, rift.NPC.ELITE, rift.NPC.PYLON }) do
+        eq.depop_all(id)
+    end
+
+    eq.spawn2(rift.NPC.GUARDIAN, 0, 0, x, y, z, h)
+end
+
+-- Lets the Guardian summon archetype adds without them depopping themselves
+function rift.spawn_minion(npc_type_id, x, y, z, h)
+    state.allow_spawn = true
+    eq.spawn2(npc_type_id, 0, 0, x, y, z, h)
+    state.allow_spawn = false
+end
+
+function rift.complete(x, y, z, h)
+    ensure_state()
+    if not state.is_active then return end
+    state.is_active = false
+
+    local clear_time = os.time() - state.start_time
+    rift.announce(15, string.format("GREATER RIFT CLEARED! The Chrono-Anchor re-stitches the Fabric. Time: %02d:%02d (Tier %d)",
+        math.floor(clear_time / 60), clear_time % 60, state.tier))
+
+    each_client(function(client)
+        eq.delete_data(rift.key_active(client:CharacterID()))
+        rift.grant_rewards(client, state.tier, clear_time)
+        record_clear(client, state.tier)
+    end)
+
+    eq.spawn2(rift.NPC.PORTAL, 0, 0, x + 5, y + 5, z, h)
+    rift.announce(15, "A rift portal leading back to The Void has opened!")
+end
+
+function rift.fail()
+    state.is_active = false
+    rift.announce(13, string.format("The Rift's energy dissipates... You failed to complete the Rift in time. (Reached %d%%)", rift.percent()))
+
+    -- Portal so nobody is stuck waiting for the instance to expire
+    local client = first_client()
+    if client then
+        eq.spawn2(rift.NPC.PORTAL, 0, 0, client:GetX() + 5, client:GetY() + 5, client:GetZ(), client:GetHeading())
+        rift.announce(15, "A rift portal leading back to The Void has opened!")
+    end
+end
+
+-- Called once per player in the instance on a clear. Pays alternate currency
+-- so players can bank it and buy several rolled items at once from the vendor.
+function rift.reward_amount(tier, clear_time)
+    local r = rift.REWARD
+    local amount = r.BASE + r.PER_TIER * tier
+    if clear_time < r.SPEED_SECONDS then
+        amount = amount + math.floor(amount * r.SPEED_BONUS / 100)
+    end
+    return amount
+end
+
+function rift.grant_rewards(client, tier, clear_time)
+    local r = rift.REWARD
+    local amount = rift.reward_amount(tier, clear_time)
+    client:AddAlternateCurrencyValue(r.CURRENCY_ID, amount)
+    client:Message(15, string.format("You receive %d %s. (Total: %d)",
+        amount, r.CURRENCY_NAME, client:GetAlternateCurrencyValue(r.CURRENCY_ID)))
+end
+
+function rift.send_to_hub(client)
+    client:Message(15, "Stepping through the rift, you return to The Void...")
+    client:MovePC(rift.HUB_ZONE_ID, rift.HUB_X, rift.HUB_Y, rift.HUB_Z, rift.HUB_H)
+end
+
+return rift
