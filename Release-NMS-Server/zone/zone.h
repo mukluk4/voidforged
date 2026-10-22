@@ -119,7 +119,7 @@ public:
 	bool is_zone_time_localized;
 	bool quest_idle_override;
 	void ApplyGlobalBuffs();
-	void HandlePermanentServerBuffs();
+	void HandlePermanentServerBuffs(bool allow_remove = true);
 	bool IsIdleWhenEmpty() const;
 	void SetIdleWhenEmpty(bool idle_when_empty);
 	uint32 GetSecondsBeforeIdle() const;

@@ -79,6 +79,8 @@ void command_disarmtrap(Client *c, const Seperator *sep);
 void command_door(Client *c, const Seperator *sep);
 void command_doanim(Client *c, const Seperator *sep);
 void command_dye(Client *c, const Seperator *sep);
+void command_dyninfo(Client *c, const Seperator *sep);
+void command_dynitem(Client *c, const Seperator *sep);
 void command_dz(Client *c, const Seperator *sep);
 void command_dzkickplayers(Client *c, const Seperator *sep);
 void command_editmassrespawn(Client *c, const Seperator *sep);

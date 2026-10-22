@@ -26,6 +26,7 @@
 #include "mob.h"
 
 #include "bot.h"
+#include "dynamic_items.h"
 
 #include <algorithm>
 
@@ -1613,6 +1614,14 @@ uint32 Mob::GetInstrumentMod(uint16 spell_id)
 	}
 
 	LogSpells("Name [{}] spell [{}] mod [{}] modcap [{}]\n", GetName(), spell_id, effectmod, effectmodcap);
+
+	// Dynamic item instrument/singing %: a multiplier after the cap, so it stacks on top
+	if (IsClient()) {
+		const auto pct = DynamicItemsManager::GetSongModPct(CastToClient()->dynamic_item_bonuses, spells[spell_id].skill);
+		if (pct) {
+			effectmod = (effectmod * (100 + pct) + 50) / 100;
+		}
+	}
 
 	return effectmod + spellbonuses.bardModExtra + itembonuses.bardModExtra + aabonuses.bardModExtra;
 }

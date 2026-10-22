@@ -1255,6 +1255,12 @@ bool Zone::Init(bool is_static) {
 
 	LogInfo("Zone booted successfully zone_id [{}] time_offset [{}]", zoneid, zone_time.getEQTimeZone());
 
+	LogInfo("Loading Armor Set Bonuses...");
+	LoadArmorSetBonuses();
+
+	// NMS: keep the permanent server buffs running all the time, not only after a rules reload
+	zone->HandlePermanentServerBuffs(false);
+
 	// logging origination information
 	EQEmuLogSys::Instance()->origination_info.zone_short_name = zone->short_name;
 	EQEmuLogSys::Instance()->origination_info.zone_long_name  = zone->long_name;
@@ -3195,7 +3201,9 @@ void Zone::ApplyGlobalBuffs()
 // Called on rule reload (e.g., via Spire). Sets the 4 Echo server buff spell IDs
 // to a 1-year duration when enabled, or removes them when disabled.
 // Automatically refreshes the 1-year clock on every server start / rule reload.
-void Zone::HandlePermanentServerBuffs()
+// allow_remove = false (zone boot) only ever adds them: a zone process holding stale or overridden
+// rules must not wipe the server-wide buffs for everyone. Removal is left to a deliberate rules reload.
+void Zone::HandlePermanentServerBuffs(bool allow_remove)
 {
 	static const uint32 PERM_BUFF_IDS[] = {43002, 43005, 36856, 17779};
 	static const int    PERM_BUFF_COUNT  = 4;
@@ -3216,7 +3224,7 @@ void Zone::HandlePermanentServerBuffs()
 		// Reload cache and notify players buffs are incoming
 		ApplyGlobalBuffs();
 	}
-	else {
+	else if (allow_remove) {
 		database.QueryDatabase(
 			"DELETE FROM global_buffs WHERE spell_id IN (43002, 43005, 36856, 17779)"
 		);

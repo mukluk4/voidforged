@@ -2992,7 +2992,8 @@ namespace SoF
 
 	void SerializeItem(EQ::OutBuffer& ob, const EQ::ItemInstance *inst, int16 slot_id_in, uint8 depth)
 	{
-		const EQ::ItemData *item = inst->GetUnscaledItem();
+		// Dynamic items send their rolled stats; scaling items are scaled by the client itself
+		const EQ::ItemData *item = inst->HasDynamicStats() ? inst->GetItem() : inst->GetUnscaledItem();
 
 		SoF::structs::ItemSerializationHeader hdr;
 
@@ -3035,7 +3036,7 @@ namespace SoF
 		SoF::structs::ItemBodyStruct ibs;
 		memset(&ibs, 0, sizeof(SoF::structs::ItemBodyStruct));
 
-		ibs.id = item->ID;
+		ibs.id = inst->GetDisplayID() ? inst->GetDisplayID() : item->ID;
 		// weight is uint8 in the struct, and some weights exceed that, so capping at 255.
 		ibs.weight = ((item->Weight > 255) ? 255 : item->Weight);
 		ibs.norent = item->NoRent;

@@ -3330,7 +3330,8 @@ namespace Titanium
 // file scope helper methods
 	void SerializeItem(EQ::OutBuffer& ob, const EQ::ItemInstance *inst, int16 slot_id_in, uint8 depth) {
 		const char *protection      = "\\\\\\\\\\";
-		const EQ::ItemData *item = inst->GetUnscaledItem();
+		// Dynamic items send their rolled stats; scaling items are scaled by the client itself
+		const EQ::ItemData *item = inst->HasDynamicStats() ? inst->GetItem() : inst->GetUnscaledItem();
 
 		ob << StringFormat(
 			"%.*s%s",
@@ -3361,7 +3362,7 @@ namespace Titanium
 		ob << '|' << item->Name;
 		ob << '|' << item->Lore;
 		ob << '|' << item->IDFile;
-		ob << '|' << itoa(item->ID);
+		ob << '|' << itoa(inst->GetDisplayID() ? inst->GetDisplayID() : item->ID);
 		ob << '|' << itoa(((item->Weight > 255) ? 255 : item->Weight));
 
 		ob << '|' << itoa(item->NoRent);

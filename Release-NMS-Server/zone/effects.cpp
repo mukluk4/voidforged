@@ -29,6 +29,7 @@
 #include "worldserver.h"
 #include "zonedb.h"
 #include "position.h"
+#include "dynamic_items.h"
 
 float Mob::GetActSpellRange(uint16 spell_id, float range)
 {
@@ -142,6 +143,11 @@ int Mob::GetSharedCriticalHealOverTime() {
 int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target) {
 	if (spells[spell_id].target_type == ST_Self) {
 		return value;
+	}
+
+	// Dynamic item element damage %, applied to the base so focuses and crits build on it
+	if (IsClient()) {
+		value += value * DynamicItemsManager::GetSpellDamagePct(CastToClient()->dynamic_item_bonuses, spell_id) / 100;
 	}
 
         bool heroic_stat_bonus = false;
@@ -408,6 +414,11 @@ int64 Mob::GetActDoTDamage(uint16 spell_id, int64 value, Mob* target, bool from_
 	if (target == nullptr)
 		return value;
 
+	// Dynamic item element damage % (same as direct damage)
+	if (IsClient()) {
+		value += value * DynamicItemsManager::GetSpellDamagePct(CastToClient()->dynamic_item_bonuses, spell_id) / 100;
+	}
+
 	if (IsNPC()) {
 		value += value * CastToNPC()->GetSpellFocusDMG() / 100;
 
@@ -626,6 +637,11 @@ int64 Mob::GetActSpellHealing(uint16 spell_id, int64 value, Mob* target, bool fr
 	}
 
 	bool lifetap = IsLifetapSpell(spell_id) && RuleB(Spells, CompoundLifetapHeals);
+
+	// Dynamic item healing %, applied to the base so focuses and crits build on it
+	if (IsClient()) {
+		value += value * CastToClient()->dynamic_item_bonuses.HealAmountPct / 100;
+	}
 
 	EQ::spells::CastingSlot cast_slot = static_cast<EQ::spells::CastingSlot>(Strings::ToUnsignedInt(GetEntityVariable(fmt::format("SpellGemHint_{}", spell_id)), static_cast<uint32>(EQ::spells::CastingSlot::MaxGems)));
 	if (cast_slot >= EQ::spells::CastingSlot::Gem1 && cast_slot <= EQ::spells::CastingSlot::Gem12) {

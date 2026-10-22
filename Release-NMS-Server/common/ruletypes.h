@@ -956,6 +956,7 @@ RULE_INT(Merchant, PricePenaltyPct, 4, "Determines maximum price penalty from ha
 RULE_REAL(Merchant, ChaBonusMod, 3.4500000476837, "Determines CHA cap, from 104 CHA. 3.45 is 132 CHA at apprehensive. 0.34 is 400 CHA at apprehensive")
 RULE_REAL(Merchant, ChaPenaltyMod, 1.5199999809265, "Determines CHA bottom, up to 102 CHA. 1.52 is 37 CHA at apprehensive. 0.98 is 0 CHA at apprehensive")
 RULE_BOOL(Merchant, EnableAltCurrencySell, true, "Enables the ability to resell items to alternate currency merchants")
+RULE_INT(Merchant, DynamicItemSellRefundPct, 20, "Percent of the alternate currency cost refunded when selling a dynamic (seeded) item back to a merchant")
 RULE_BOOL(Merchant, AllowCorpse, false, "Setting whether dealers leave a corpse behind ")
 RULE_CATEGORY_END()
 
@@ -1285,6 +1286,8 @@ RULE_BOOL(Custom,   ConditionalPetRampageImmunity, 			true, "Enable to make pets
 RULE_BOOL(Custom, 	DontInterruptHealsByMelee, 				true, "Enable to prevent direct heal spells from being interrupted by melee attacks")
 RULE_BOOL(Custom,	AlternateMobFDBehavior,					true, "Enable to cause mob FD effects to randomly pick a new target")
 RULE_BOOL(Custom,   EnableAccountAltCurrency, 				true, "Enable account-based alternate currency.")
+RULE_BOOL(Custom,   DynamicItemDisplayIds, 					true, "Send each dynamic (seeded) item copy to clients under its own item ID so the item window shows that copy's rolls (clients cache item data by ID)")
+RULE_BOOL(Custom,   KillFactionHits, 						true, "Killing an NPC adjusts the killers' faction from its npc_faction entries. False: kills never change faction (quest faction still works)")
 RULE_INT(Custom,  	AAConsumeBaseValue, 					50, "Base value for AA consumption")
 RULE_REAL(Custom, 	ScaleAutoAttackByHStr, 					1.0f, "Scale auto attack damage by this value. 0.0 to disable.")
 RULE_INT(Custom, 	ScaleAutoAttackHStrSoftCap,	 			100, "Soft-cap: Lower bound of hStr linear decay soft scaling")

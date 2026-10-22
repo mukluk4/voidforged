@@ -5182,7 +5182,8 @@ namespace RoF
 
 	void SerializeItem(EQ::OutBuffer& ob, const EQ::ItemInstance *inst, int16 slot_id_in, uint8 depth, ItemPacketType packet_type)
 	{
-		const EQ::ItemData *item = inst->GetUnscaledItem();
+		// Dynamic items send their rolled stats; scaling items are scaled by the client itself
+		const EQ::ItemData *item = inst->HasDynamicStats() ? inst->GetItem() : inst->GetUnscaledItem();
 
 		RoF::structs::ItemSerializationHeader hdr;
 
@@ -5300,7 +5301,7 @@ namespace RoF
 		RoF::structs::ItemBodyStruct ibs;
 		memset(&ibs, 0, sizeof(RoF::structs::ItemBodyStruct));
 
-		ibs.id = item->ID;
+		ibs.id = inst->GetDisplayID() ? inst->GetDisplayID() : item->ID;
 		ibs.weight = item->Weight;
 		ibs.norent = item->NoRent;
 		ibs.nodrop = item->NoDrop;

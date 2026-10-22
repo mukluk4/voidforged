@@ -35,6 +35,8 @@ struct DynamicZoneLocation;
 enum WaterRegionType : int;
 enum class DynamicZoneMemberStatus;
 
+
+
 namespace EQ
 {
 	struct ItemData;
@@ -58,6 +60,7 @@ namespace EQ
 #include "aggromanager.h"
 
 #include "common.h"
+#include "../common/dynamic_item_structs.h"
 #include "merc.h"
 #include "mob.h"
 #include "qglobals.h"
@@ -120,6 +123,7 @@ enum { //scribing argument to MemorizeSpell
 	memSpellForget = 2,
 	memSpellSpellbar = 3
 };
+
 
 //Modes for the zoning state of the client.
 typedef enum {
@@ -271,7 +275,9 @@ public:
 	Client(EQStreamInterface * ieqs);
 	Client(); // mocking / testing
 	~Client();
-
+	void CheckArmorSetBonuses(StatBonuses* itembonuses);
+	std::unordered_map<uint32, uint32> m_active_armor_set_tiers;
+	EQ::DynamicItemBonuses dynamic_item_bonuses;
 	void ReconnectUCS();
 	void RecordStats();
 
@@ -455,6 +461,20 @@ public:
 	void ModifyBuyLine(const EQApplicationPacket *app);
 	void CreateStartingBuyLines(const EQApplicationPacket *app);
 	void BuyerItemSearch(const EQApplicationPacket *app);
+	void SendWindow(
+		uint32 button_one_id,
+		uint32 button_two_id,
+		uint32 button_type,
+		const char* button_one_text,
+		const char* button_two_text,
+		uint32 duration,
+		int title_type,
+		Mob* target,
+		const char* title,
+		const char* text,
+		...
+	);
+	
 	void SendWindowUpdatesToSellerAndBuyer(BuyerLineSellItem_Struct& blsi);
 	void SendBarterBuyerClientMessage(BuyerLineSellItem_Struct& blsi, BarterBuyerActions action, BarterBuyerSubActions sub_action, BarterBuyerSubActions error_code);
 	bool BuildBuyLineMap(std::map<uint32, BuylineItemDetails_Struct>& item_map, BuyerBuyLines_Struct& bl);
@@ -1437,7 +1457,6 @@ public:
 	//Doesn't appear to work directly after the client recieves an action packet.
 	void SendBuffDurationPacket(Buffs_Struct &buff, int slot);
 	void SendBuffNumHitPacket(Buffs_Struct &buff, int slot);
-
 	void ProcessInspectRequest(Client* requestee, Client* requester);
 	bool ClientFinishedLoading() { return (conn_state == ClientConnectFinished); }
 	int FindSpellBookSlotBySpellID(uint16 spellid);
@@ -1452,7 +1471,6 @@ public:
 	uint16 GetMaxSkillAfterSpecializationRules(EQ::skills::SkillType skillid, uint16 maxSkill);
 	void SendPopupToClient(const char *Title, const char *Text, uint32 PopupID = 0, uint32 Buttons = 0, uint32 Duration = 0);
 	void SendFullPopup(const char *Title, const char *Text, uint32 PopupID = 0, uint32 NegativeID = 0, uint32 Buttons = 0, uint32 Duration = 0, const char *ButtonName0 = 0, const char *ButtonName1 = 0, uint32 SoundControls = 0);
-	void SendWindow(uint32 button_one_id, uint32 button_two_id, uint32 button_type, const char* button_one_text, const char* button_two_text, uint32 duration, int title_type, Mob* target, const char* title, const char* text, ...);
 	bool PendingTranslocate;
 	time_t TranslocateTime;
 	bool PendingSacrifice;
@@ -2332,6 +2350,8 @@ public:
 	bool GetSavedPetCommand(uint8 class_id, uint8 command_id);
 	void SetSavedPetCommand(uint8 class_id, uint8 command_id, bool new_state);
 
+
+
 private:
 
 	std::unordered_map<uint8, CharacterPetCommandStatesRepository::PetCommandStates> m_pet_command_cache;
@@ -2639,5 +2659,28 @@ public:
 	void CheckAutoIdleAFK(PlayerPositionUpdateClient_Struct *p);
 	void SyncWorldPositionsToClient(bool ignore_idle = false);
 };
+
+// --- Global Structs & Maps (OUTSIDE class Client) ---
+struct ArmorSetItemDef {
+	uint32 item_id;
+	uint32 set_id;
+	uint32 class_mask;
+};
+
+struct ArmorSetBonusDef {
+	uint32 set_id;
+	uint32 min_pieces;
+	uint32 class_mask;
+	int32 stat_id;
+	int32 stat_value;
+	EQ::eDynamicAffixID affix = EQ::AFFIX_NONE; // set: a dynamic item affix code is used instead of stat_id
+};
+
+// --- Global Map Declarations ---
+extern std::unordered_map<uint32, ArmorSetItemDef> g_armor_set_item_map;
+extern std::unordered_map<uint32, std::vector<ArmorSetBonusDef>> g_armor_set_bonuses_map;
+
+// --- Global Loader Declaration ---
+void LoadArmorSetBonuses();
 
 #endif

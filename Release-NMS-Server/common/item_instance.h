@@ -115,6 +115,20 @@ namespace EQ
 
 		inline bool IsExpendable() const { return ((m_item) ? ((m_item->Click.Type == item::ItemEffectExpendable) || (m_item->ItemType == item::ItemTypePotion)) : false); }
 
+		// Dynamic (seeded) items: zone installs a hook that builds this instance's rolled stats
+		// whenever its seed is set. The rolled copy is what GetItem() returns and what clients are sent.
+		static constexpr const char *DYNAMIC_SEED_KEY = "dyn_seed";
+		using DynamicStatsHook = void (*)(ItemInstance &inst);
+		static DynamicStatsHook dynamic_stats_hook;
+
+		void SetDynamicItemData(const ItemData &data);
+		void ClearDynamicItemData();
+		bool HasDynamicStats() const { return m_dynamic_stats; }
+
+		// Clients cache item data by item ID, so each dynamic copy is sent under its own ID (0 = use the real ID)
+		uint32 GetDisplayID() const { return m_display_id; }
+		void SetDisplayID(uint32 id) { m_display_id = id; }
+
 		//
 		// Contents
 		//
@@ -382,6 +396,8 @@ namespace EQ
 		int8             m_evolveLvl{0};
 		ItemData *       m_scaledItem{nullptr};
 		bool             m_scaling{false};
+		bool             m_dynamic_stats{false};    // m_scaledItem holds rolled dynamic item stats
+		uint32           m_display_id{0};           // item ID sent to clients for dynamic items
 		uint32           m_ornamenticon{0};
 		uint32           m_ornamentidfile{0};
 		uint32           m_new_id_file{0};

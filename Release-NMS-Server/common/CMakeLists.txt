@@ -334,6 +334,7 @@ SET(repositories
     repositories/base/base_tribute_levels_repository.h
     repositories/base/base_veteran_reward_templates_repository.h
     repositories/base/base_zone_repository.h
+    dynamic_item_structs.h
     repositories/base/base_zone_points_repository.h
 
     # Extended Repositories

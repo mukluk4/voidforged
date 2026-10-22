@@ -89,6 +89,7 @@ extern volatile bool is_zone_loaded;
 #include "../common/database/database_update.h"
 #include "../common/skill_caps.h"
 #include "zone_cli.h"
+#include "dynamic_items.h"
 
 EntityList  entity_list;
 WorldServer worldserver;
@@ -392,6 +393,11 @@ int main(int argc, char **argv)
 	EvolvingItemsManager::Instance()->SetDatabase(&database);
 	EvolvingItemsManager::Instance()->SetContentDatabase(&content_db);
 	EvolvingItemsManager::Instance()->LoadEvolvingItems();
+
+	// Load dynamic (seeded) item definitions
+	DynamicItemsManager::Instance()->SetContentDatabase(&content_db);
+	DynamicItemsManager::Instance()->Load();
+	EQ::ItemInstance::dynamic_stats_hook = &DynamicItemsManager::ApplyToInstance;
 
 	database.GetDecayTimes(npcCorpseDecayTimes);
 

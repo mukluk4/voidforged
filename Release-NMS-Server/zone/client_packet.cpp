@@ -76,6 +76,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "../common/repositories/character_stats_record_repository.h"
 #include "dialogue_window.h"
 #include "../common/rulesys.h"
+#include "dynamic_items.h"
 #include "../common/repositories/adventure_members_repository.h"
 
 extern QueryServ* QServ;
@@ -2766,15 +2767,24 @@ void Client::Handle_OP_AltCurrencyMerchantRequest(const EQApplicationPacket *app
 				continue;
 			}
 
+			// Same class restriction as regular merchants (all of the character's classes on multiclass servers)
+			if (!(ml.classes_required & GetClassesBits())) {
+				continue;
+			}
+
 			item = database.GetItem(ml.item);
 			if (item) {
+				// The window's "Show only items I can use" filter checks the client's single (displayed)
+				// class, so report items any of the character's classes can use as usable by all
+				const uint32 classes = (item->Classes & GetClassesBits()) ? Class::ALL_CLASSES_BITMASK : item->Classes;
+
 				item_ss << "^" << item->Name << "|";
 				item_ss << item->ID << "|";
 				item_ss << ml.alt_currency_cost << "|";
 				item_ss << "0|";
 				item_ss << "1|";
 				item_ss << item->Races << "|";
-				item_ss << item->Classes;
+				item_ss << classes;
 				count++;
 			}
 		}
@@ -2854,6 +2864,20 @@ void Client::Handle_OP_AltCurrencyPurchase(const EQApplicationPacket *app)
 			return;
 		}
 
+		// Dynamic items are single-class; HasClass checks every class on multiclass servers
+		const auto dynamic_item = DynamicItemsManager::Instance()->GetItem(item->ID);
+		if (dynamic_item && !HasClass(dynamic_item->class_id)) {
+			Message(
+				Chat::Red,
+				fmt::format(
+					"{} can only be purchased by a {}.",
+					item->Name,
+					GetClassIDName(dynamic_item->class_id)
+				).c_str()
+			);
+			return;
+		}
+
 		if (parse->PlayerHasQuestSub(EVENT_ALT_CURRENCY_MERCHANT_BUY)) {
 			const auto& export_string = fmt::format(
 				"{} {} {} {} {}",
@@ -2895,10 +2919,25 @@ void Client::Handle_OP_AltCurrencyPurchase(const EQApplicationPacket *app)
 		CheckItemDiscoverability(item->ID);
 
 		EQ::ItemInstance *inst = database.CreateItem(item, charges);
+		if (!inst) {
+			LogError("Failed to create alternate currency item [{}] for [{}]", item->ID, GetCleanName());
+			return;
+		}
+
+		// Stats are rolled once, here, and never change; only the seed is stored on the item
+		if (dynamic_item) {
+			DynamicItemsManager::SetSeed(*inst, GenerateNewItemSeed());
+		}
+
 		if (!AutoPutLootInInventory(*inst, true, true))
 		{
 			PutLootInInventory(EQ::invslot::slotCursor, *inst);
 		}
+
+		if (dynamic_item) {
+			DynamicItemsManager::Instance()->SendSummary(this, *inst);
+		}
+
 		safe_delete(inst);
 
 		Save(1);
@@ -3004,6 +3043,7 @@ void Client::Handle_OP_AltCurrencySell(const EQApplicationPacket *app)
 		uint32 current_currency = GetAlternateCurrencyValue(alt_cur_id);
 		uint32 merchant_id = tar->MerchantType;
 		uint32 npc_id = tar->GetNPCTypeID();
+		uint32 full_cost = 0;
 		bool found = false;
 		std::list<MerchantList> merlist = zone->merchanttable[merchant_id];
 		std::list<MerchantList>::const_iterator itr;
@@ -3023,6 +3063,7 @@ void Client::Handle_OP_AltCurrencySell(const EQApplicationPacket *app)
 				continue;
 
 			if (item->ID == inst->GetItem()->ID) {
+				full_cost = ml.alt_currency_cost;
 				// 06/11/2016 This formula matches RoF2 client side calculation.
 				cost = EQ::Clamp(
 					cost,
@@ -3039,6 +3080,11 @@ void Client::Handle_OP_AltCurrencySell(const EQApplicationPacket *app)
 
 		if (!found) {
 			return;
+		}
+
+		// Dynamic items refund a flat share of their price so selling and rebuying isn't a free reroll
+		if (DynamicItemsManager::Instance()->IsDynamicItem(item->ID)) {
+			cost = DynamicItemsManager::GetSellRefund(full_cost);
 		}
 
 		if (!inst->IsStackable())
@@ -3129,6 +3175,7 @@ void Client::Handle_OP_AltCurrencySellSelection(const EQApplicationPacket *app)
 		uint32 cost = 0;
 		uint32 current_currency = GetAlternateCurrencyValue(alt_cur_id);
 		uint32 merchant_id = tar->MerchantType;
+		uint32 full_cost = 0;
 
 		if (RuleB(Merchant, EnableAltCurrencySell)) {
 			bool found = false;
@@ -3150,6 +3197,7 @@ void Client::Handle_OP_AltCurrencySellSelection(const EQApplicationPacket *app)
 					continue;
 
 				if (item->ID == inst->GetItem()->ID) {
+					full_cost = ml.alt_currency_cost;
 					// 06/11/2016 This formula matches RoF2 client side calculation.
 					cost = EQ::Clamp(
 						cost,
@@ -3166,6 +3214,9 @@ void Client::Handle_OP_AltCurrencySellSelection(const EQApplicationPacket *app)
 
 			if (!found) {
 				cost = 0;
+			}
+			else if (DynamicItemsManager::Instance()->IsDynamicItem(item->ID)) {
+				cost = DynamicItemsManager::GetSellRefund(full_cost);
 			}
 		}
 		else {
@@ -9516,6 +9567,25 @@ void Client::Handle_OP_ItemLinkClick(const EQApplicationPacket *app)
 	// todo: verify ivrs->link_hash based on a rule, in case we don't care about people being able to sniff data
 	// from the item DB
 
+	// Links to dynamic items carry that copy's display ID; rebuild the copy from its seed so the
+	// clicker sees its actual rolls. Only zones that have loaded the copy know its seed.
+	if (DynamicItemsManager::IsDisplayId(ivrs->item_id)) {
+		uint32 dynamic_item_id = 0;
+		uint64 dynamic_seed    = 0;
+		if (!DynamicItemsManager::Instance()->ResolveDisplayId(ivrs->item_id, dynamic_item_id, dynamic_seed)) {
+			Message(Chat::White, "That item's details aren't available in this zone.");
+			return;
+		}
+
+		auto dynamic_inst = database.CreateItem(dynamic_item_id);
+		if (dynamic_inst) {
+			DynamicItemsManager::SetSeed(*dynamic_inst, dynamic_seed);
+			SendItemPacket(0, dynamic_inst, ItemPacketViewLink);
+			safe_delete(dynamic_inst);
+		}
+		return;
+	}
+
 	const EQ::ItemData *item = database.GetItem(ivrs->item_id);
 	if (!item) {
 		if (ivrs->item_id != SAYLINK_ITEM_ID) {
@@ -9576,7 +9646,7 @@ void Client::Handle_OP_ItemLinkResponse(const EQApplicationPacket *app)
 		return;
 	}
 	LDONItemViewRequest_Struct* item = (LDONItemViewRequest_Struct*)app->pBuffer;
-	EQ::ItemInstance* inst = database.CreateItem(item->item_id);
+	EQ::ItemInstance* inst = database.CreateItem(DynamicItemsManager::Instance()->ResolveItemId(item->item_id));
 	if (inst) {
 		SendItemPacket(0, inst, ItemPacketViewLink);
 		safe_delete(inst);
@@ -9593,7 +9663,7 @@ void Client::Handle_OP_ItemName(const EQApplicationPacket *app)
 	}
 	ItemNamePacket_Struct *p = (ItemNamePacket_Struct*)app->pBuffer;
 	const EQ::ItemData *item = nullptr;
-	if ((item = database.GetItem(p->item_id)) != nullptr) {
+	if ((item = database.GetItem(DynamicItemsManager::Instance()->ResolveItemId(p->item_id))) != nullptr) {
 		auto outapp = new EQApplicationPacket(OP_ItemName, sizeof(ItemNamePacket_Struct));
 		p = (ItemNamePacket_Struct*)outapp->pBuffer;
 		memset(p, 0, sizeof(ItemNamePacket_Struct));
@@ -9608,7 +9678,7 @@ void Client::Handle_OP_ItemPreview(const EQApplicationPacket *app)
 	VERIFY_PACKET_LENGTH(OP_ItemPreview, app, ItemPreview_Struct);
 	ItemPreview_Struct *ips = (ItemPreview_Struct *)app->pBuffer;
 
-	const EQ::ItemData* item = database.GetItem(ips->itemid);
+	const EQ::ItemData* item = database.GetItem(DynamicItemsManager::Instance()->ResolveItemId(ips->itemid));
 
 	if (item) {
 		auto outapp = new EQApplicationPacket(OP_ItemPreview, strlen(item->Name) + strlen(item->Lore) +
@@ -9786,7 +9856,7 @@ void Client::Handle_OP_ItemPreviewRequest(const EQApplicationPacket* app)
 {
 	VERIFY_PACKET_LENGTH(OP_ItemPreviewRequest, app, ItemPreview_Struct);
 	auto ips  = (ItemPreview_Struct*) app->pBuffer;
-	const EQ::ItemData* item = database.GetItem(ips->itemid);
+	const EQ::ItemData* item = database.GetItem(DynamicItemsManager::Instance()->ResolveItemId(ips->itemid));
 
 	if (item) {
 		EQ::ItemInstance* inst = database.CreateItem(item);
@@ -13908,6 +13978,13 @@ void Client::Handle_OP_ShopPlayerBuy(const EQApplicationPacket *app)
 
 	if (CheckLoreConflict(item)) {
 		MessageString(Chat::White, DUPE_LORE_MERCHANT, tmp ? tmp->GetCleanName() : "Merchant", item->Name);
+		return;
+	}
+
+	// Dynamic items only roll their stats when bought for alternate currency (Handle_OP_AltCurrencyPurchase);
+	// sold for coin they'd be blank shells
+	if (DynamicItemsManager::Instance()->IsDynamicItem(item->ID)) {
+		Message(Chat::Red, "%s", fmt::format("{} can only be purchased with alternate currency.", item->Name).c_str());
 		return;
 	}
 
