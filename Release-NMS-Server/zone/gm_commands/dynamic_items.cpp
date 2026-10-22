@@ -290,8 +290,17 @@ namespace {
 		return name;
 	}
 
-	// One item's stats as a table, or a second item compared against it column by column
-	void SendDynInfoTable(Client *c, const DynInfoEntry &first, const DynInfoEntry *second, const std::string &title)
+	// One item's stats as a table, or a second item compared against it column by column. The popup holds
+	// 4,095 characters (OnLevelMessage_Struct; longer text is dropped by the client), so a long table is split
+	// into pages: page_command + " <page>" re-sends this view at that page (a clickable link in chat).
+	void SendDynInfoTable(
+		Client *c,
+		const DynInfoEntry &first,
+		const DynInfoEntry *second,
+		const std::string &title,
+		int page = 1,
+		const std::string &page_command = ""
+	)
 	{
 		std::vector<EQ::eDynamicAffixID> affixes;
 		for (const auto *e : { &first, second }) {
@@ -321,9 +330,9 @@ namespace {
 			header += DialogueWindow::TableCell(fmt::format("#{}", second->number)) + DialogueWindow::TableCell("Change");
 		}
 
-		std::string rows = DialogueWindow::TableRow(header);
-		int         better = 0, worse = 0;
-
+		// Every row, with the totals counted over the whole comparison
+		std::vector<std::string> rows;
+		int                      better = 0, worse = 0;
 		for (const auto affix : affixes) {
 			bool       is_pct = false;
 			const auto name   = TableLabel(affix, is_pct);
@@ -350,29 +359,74 @@ namespace {
 				row += cell(b) + DialogueWindow::TableCell(change);
 			}
 
-			rows += DialogueWindow::TableRow(row);
+			rows.push_back(DialogueWindow::TableRow(row));
 		}
 
-		std::string text = DialogueWindow::ColorMessage("gold", EntryTitle(first)) + DialogueWindow::Break();
+		std::string top = DialogueWindow::ColorMessage("gold", EntryTitle(first)) + DialogueWindow::Break();
 		if (second) {
-			text += "vs " + DialogueWindow::ColorMessage("white", EntryTitle(*second)) + DialogueWindow::Break();
+			top += "vs " + DialogueWindow::ColorMessage("white", EntryTitle(*second)) + DialogueWindow::Break();
 		}
-		text += DialogueWindow::Table(rows);
+
+		std::string bottom;
 		if (second) {
-			text += fmt::format(
+			bottom += fmt::format(
 				"{} better, {} worse",
 				DialogueWindow::ColorMessage("green", std::to_string(better)),
 				DialogueWindow::ColorMessage("red", std::to_string(worse))
 			) + DialogueWindow::Break();
 		}
-		text += "* = random affix";
+		bottom += "* = random affix";
 
-		if (text.size() > 4095) {
-			c->Message(Chat::Red, "Too many stats to fit in one window.");
-			return;
+		// Split the rows into pages that fit, leaving room for the page line
+		constexpr size_t popup_limit = 4095;
+		const std::string page_line_room = DialogueWindow::Break() + "Page 99 of 99";
+		const size_t      fixed = top.size() + DialogueWindow::Table(DialogueWindow::TableRow(header)).size() +
+			bottom.size() + page_line_room.size();
+
+		std::vector<std::pair<size_t, size_t>> pages; // [first row, end)
+		size_t                                 begin = 0, size = fixed;
+		for (size_t i = 0; i < rows.size(); ++i) {
+			if (i > begin && size + rows[i].size() > popup_limit) {
+				pages.emplace_back(begin, i);
+				begin = i;
+				size  = fixed;
+			}
+			size += rows[i].size();
+		}
+		pages.emplace_back(begin, rows.size());
+
+		const int page_count = static_cast<int>(pages.size());
+		page = std::clamp(page, 1, page_count);
+		const auto [from, to] = pages[page - 1];
+
+		std::string table_rows = DialogueWindow::TableRow(header);
+		for (size_t i = from; i < to; ++i) {
+			table_rows += rows[i];
 		}
 
-		c->SendPopupToClient(title.c_str(), text.c_str());
+		std::string text = top + DialogueWindow::Table(table_rows) + bottom;
+		if (page_count > 1) {
+			text += DialogueWindow::Break() + fmt::format("Page {} of {}", page, page_count);
+		}
+
+		c->SendPopupToClient(
+			(page_count > 1 ? fmt::format("{} ({}/{})", title, page, page_count) : title).c_str(),
+			text.c_str()
+		);
+
+		if (page_count > 1 && !page_command.empty()) {
+			std::vector<std::string> links;
+			for (int p = 1; p <= page_count; ++p) {
+				if (p != page) {
+					links.push_back(Saylink::Create(fmt::format("{} {}", page_command, p), true, fmt::format("Page {}", p)));
+				}
+			}
+			c->Message(
+				Chat::White,
+				"%s",
+				fmt::format("{} has {} pages: {}", title, page_count, Strings::Join(links, " ")).c_str()
+			);
+		}
 	}
 
 	// Clickable links in chat, one per item in each slot, that open its comparison window
@@ -523,7 +577,7 @@ namespace {
 		SendDynInfoLinks(c, entries, group);
 	}
 
-	void SendDynInfoCompare(Client *c, const std::vector<DynInfoEntry> &entries, int a, int b)
+	void SendDynInfoCompare(Client *c, const std::vector<DynInfoEntry> &entries, int a, int b, int page = 1)
 	{
 		const auto first  = FindEntry(entries, a);
 		const auto second = FindEntry(entries, b);
@@ -532,11 +586,11 @@ namespace {
 			return;
 		}
 
-		SendDynInfoTable(c, *first, second, fmt::format("Compare #{} with #{}", b, a));
+		SendDynInfoTable(c, *first, second, fmt::format("Compare #{} with #{}", b, a), page, fmt::format("#dyninfo compare {} {}", a, b));
 	}
 
 	// One item against whatever is worn in its slot (or on its own if it's the worn one)
-	void SendDynInfoItem(Client *c, const std::vector<DynInfoEntry> &entries, int number)
+	void SendDynInfoItem(Client *c, const std::vector<DynInfoEntry> &entries, int number, int page = 1)
 	{
 		const auto e = FindEntry(entries, number);
 		if (!e) {
@@ -546,11 +600,11 @@ namespace {
 
 		const auto worn = GroupBaseline(entries, e->group);
 		if (!worn || worn == e) {
-			SendDynInfoTable(c, *e, nullptr, fmt::format("Dynamic Item #{}", number));
+			SendDynInfoTable(c, *e, nullptr, fmt::format("Dynamic Item #{}", number), page, fmt::format("#dyninfo {}", number));
 			return;
 		}
 
-		SendDynInfoTable(c, *worn, e, fmt::format("Compare #{} with worn #{}", number, worn->number));
+		SendDynInfoTable(c, *worn, e, fmt::format("Compare #{} with worn #{}", number, worn->number), page, fmt::format("#dyninfo {}", number));
 	}
 }
 
@@ -568,17 +622,23 @@ void command_dyninfo(Client *c, const Seperator *sep)
 	}
 
 	if (sep->IsNumber(1)) {
-		SendDynInfoItem(c, entries, Strings::ToInt(sep->arg[1]));
+		SendDynInfoItem(c, entries, Strings::ToInt(sep->arg[1]), sep->IsNumber(2) ? Strings::ToInt(sep->arg[2]) : 1);
 		return;
 	}
 
 	if (!strcasecmp(sep->arg[1], "compare")) {
 		if (!sep->IsNumber(2) || !sep->IsNumber(3)) {
-			c->Message(Chat::White, "Usage: #dyninfo compare [#] [#] - numbers are shown by #dyninfo");
+			c->Message(Chat::White, "Usage: #dyninfo compare [#] [#] [page] - numbers are shown by #dyninfo");
 			return;
 		}
 
-		SendDynInfoCompare(c, entries, Strings::ToInt(sep->arg[2]), Strings::ToInt(sep->arg[3]));
+		SendDynInfoCompare(
+			c,
+			entries,
+			Strings::ToInt(sep->arg[2]),
+			Strings::ToInt(sep->arg[3]),
+			sep->IsNumber(4) ? Strings::ToInt(sep->arg[4]) : 1
+		);
 		return;
 	}
 
@@ -594,7 +654,7 @@ void command_dyninfo(Client *c, const Seperator *sep)
 	}
 
 	if (group < 0) {
-		c->Message(Chat::White, "Usage: #dyninfo - overview | #dyninfo [#] - compare with worn | #dyninfo [slot] - e.g. feet | #dyninfo compare [#] [#]");
+		c->Message(Chat::White, "Usage: #dyninfo - overview | #dyninfo [#] [page] - compare with worn | #dyninfo [slot] - e.g. feet | #dyninfo compare [#] [#] [page]");
 		return;
 	}
 

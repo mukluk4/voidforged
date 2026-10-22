@@ -14214,6 +14214,13 @@ void Client::Handle_OP_ShopPlayerSell(const EQApplicationPacket *app)
 		return;
 	}
 
+	// NMS: glamours carry a purchase price for the glamour vendors but have no resale value; the Purveyor
+	// of Glamour also hands them out for Echoes of Memory, so buying them back would mint platinum
+	if (Strings::BeginsWith(item->Name, "Glamour - ")) {
+		Message(Chat::MerchantExchange, "%s tells you, 'I have no use for glamours.'", vendor->GetCleanName());
+		return;
+	}
+
 	// An augmented item cannot be sold - refuse the sale rather than quietly eat the augments.
 	//
 	// merchantlist_temp has no augment columns (npcid, slot, zone_id, instance_id, itemid, charges), so

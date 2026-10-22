@@ -1,0 +1,108 @@
+# Heroic stat rebalance (2026-10-22): new bands, melee DPS main STR/STA, DEX/AGI capped at 15, hybrids
+# re-blended 75% melee template + 25% caster template. Reads the live pool to classify each class's
+# current band, prints the new table, and writes the UPDATE statements.
+#   python rebalance_heroics.py <eqemu_config.json> <out.sql>
+import json, os, subprocess, sys
+
+cfg = json.load(open(sys.argv[1]))['server']['database']
+env = dict(os.environ, MYSQL_PWD=cfg['password'])
+mysql = r'C:\Program Files\MariaDB 12.3\bin\mysql.exe'
+
+MAIN, MID, LOW = (19, 25), (11, 17), (5, 10)
+CAP = 15                                    # DEX and AGI, any class
+CAPPED_MAIN = (12, 15)                      # DEX/AGI when it's a main stat
+STATS = ['heroic_str', 'heroic_sta', 'heroic_dex', 'heroic_agi', 'heroic_int', 'heroic_wis']
+CAPPED = {'heroic_dex', 'heroic_agi'}
+MELEE_DPS = {7, 9, 16}                      # Monk, Rogue, Berserker: main STR and STA
+HYBRIDS = {3: (1, 2), 5: (1, 11), 4: (9, 6), 15: (9, 10), 8: (9, 14)}   # class: (melee 75%, caster 25%)
+NAMES = {1: 'Warrior', 2: 'Cleric', 3: 'Paladin', 4: 'Ranger', 5: 'Shadowknight', 6: 'Druid', 7: 'Monk',
+         8: 'Bard', 9: 'Rogue', 10: 'Shaman', 11: 'Necromancer', 12: 'Wizard', 13: 'Magician',
+         14: 'Enchanter', 15: 'Beastlord', 16: 'Berserker'}
+
+rows = subprocess.run([mysql, '-h', cfg['host'], '-P', str(cfg['port']), '-u', cfg['username'], cfg['db'], '-N', '-B',
+                       '-e', "SELECT class_id, affix, min_value, max_value FROM dynamic_affix_pool WHERE affix IN ("
+                             + ','.join(f"'{s}'" for s in STATS) + ")"],
+                      env=env, capture_output=True, text=True, check=True).stdout.split('\n')
+current = {}
+for line in filter(None, rows):
+    cid, affix, lo, hi = line.split('\t')
+    current[(int(cid), affix)] = (int(lo), int(hi))
+
+
+def band_of(lo, hi):
+    """Current range -> band (pure classes only): 3-8 / 4-9 main, 2-5 mid, 1-3 low"""
+    return {(3, 8): 'main', (4, 9): 'main', (2, 5): 'mid', (1, 3): 'low'}[(lo, hi)]
+
+
+def new_range(cid, stat):
+    band = band_of(*current[(cid, stat)])
+    if cid in MELEE_DPS and stat in ('heroic_str', 'heroic_sta'):
+        band = 'main'
+    if stat in CAPPED:
+        rng = {'main': CAPPED_MAIN, 'mid': (MID[0], CAP), 'low': LOW}[band]
+    else:
+        rng = {'main': MAIN, 'mid': MID, 'low': LOW}[band]
+    return rng
+
+
+new = {}
+for cid in NAMES:
+    if cid in HYBRIDS:
+        continue
+    for stat in STATS:
+        new[(cid, stat)] = new_range(cid, stat)
+for cid, (melee, caster) in HYBRIDS.items():
+    for stat in STATS:
+        (ml, mh), (cl, ch) = new[(melee, stat)], new[(caster, stat)]
+        lo, hi = round(0.75 * ml + 0.25 * cl), round(0.75 * mh + 0.25 * ch)
+        if stat in CAPPED:
+            hi = min(hi, CAP)
+        new[(cid, stat)] = (min(lo, hi), hi)
+
+print(f"{'Class':13}" + ''.join(f'{s[7:].upper():>9}' for s in STATS))
+for cid in NAMES:
+    print(f'{NAMES[cid]:13}' + ''.join(f'{"%d-%d" % new[(cid, s)]:>9}' for s in STATS))
+
+# Base stats: average-slot targets HP 400 / Mana 400 / AC 92 (plate), Endurance scaled like mana. Pure
+# classes map from their current range; hybrids re-blend 75/25 from their templates, AC x0.9.
+BASE_MAP = {
+    'hp':        {(190, 260): (360, 440), (160, 220): (300, 370)},
+    'mana':      {(190, 260): (360, 440)},
+    'endurance': {(150, 210): (290, 350)},
+    'ac':        {(32, 52): (80, 104), (28, 46): (70, 92), (25, 42): (62, 84), (18, 32): (45, 64)},
+}
+base_rows = subprocess.run([mysql, '-h', cfg['host'], '-P', str(cfg['port']), '-u', cfg['username'], cfg['db'], '-N',
+                            '-B', '-e', "SELECT class_id, affix, min_value, max_value FROM dynamic_affix_pool "
+                                        "WHERE affix IN ('hp','mana','endurance','ac')"],
+                           env=env, capture_output=True, text=True, check=True).stdout.splitlines()
+base_now = {}
+for line in filter(None, base_rows):
+    cid, affix, lo, hi = line.split()
+    base_now[(int(cid), affix)] = (int(lo), int(hi))
+
+for (cid, affix), rng in base_now.items():
+    if cid not in HYBRIDS:
+        new[(cid, affix)] = BASE_MAP[affix][rng]
+for cid, (melee, caster) in HYBRIDS.items():
+    for affix in BASE_MAP:
+        if (cid, affix) not in base_now:
+            continue
+        (ml, mh) = new.get((melee, affix), (0, 0))
+        (cl, ch) = new.get((caster, affix), (0, 0))
+        lo, hi = 0.75 * ml + 0.25 * cl, 0.75 * mh + 0.25 * ch
+        if affix == 'ac':
+            lo, hi = lo * 0.9, hi * 0.9
+        new[(cid, affix)] = (round(lo), round(hi))
+
+print()
+print(f"{'Class':13}{'HP':>10}{'MANA':>10}{'ENDUR':>10}{'AC':>9}")
+for cid in NAMES:
+    cells = ['%d-%d' % new[(cid, a)] if (cid, a) in new else '-' for a in ('hp', 'mana', 'endurance', 'ac')]
+    print(f'{NAMES[cid]:13}' + ''.join(f'{c:>10}' for c in cells[:3]) + f'{cells[3]:>9}')
+
+sql = ['-- Heroic + base stat rebalance. GENERATED by rebalance_heroics.py', 'START TRANSACTION;']
+for (cid, stat), (lo, hi) in sorted(new.items()):
+    sql.append(f"UPDATE dynamic_affix_pool SET min_value = {lo}, max_value = {hi} "
+               f"WHERE class_id = {cid} AND affix = '{stat}';")
+sql.append('COMMIT;')
+open(sys.argv[2], 'w', newline='\n').write('\n'.join(sql) + '\n')

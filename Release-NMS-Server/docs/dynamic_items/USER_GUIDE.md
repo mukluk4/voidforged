@@ -374,6 +374,11 @@ Compares your dynamic items, including ones in the bank and shared bank. Every i
 | `#dyninfo <slot>` | Full side-by-side for one slot (e.g. `feet`, `finger`, `weapon`, `ear`, `wrist`): your equipped item, then every spare with each line's difference in green or red, and "(new)" / "(lost)" for affixes |
 | `#dyninfo compare <#> <#>` | The same table for any two items, differences relative to the first |
 
+A table too long for one window (the client's popup holds about 4,000 characters, roughly 35-40 stat
+lines in a comparison) is split into pages: the title shows "(1/2)", and chat gets clickable
+**[Page 2]** links. Add the page number to jump straight there: `#dyninfo 9 2`,
+`#dyninfo compare 6 9 2`. The better/worse totals always count the whole comparison.
+
 Paired slots (Ear, Wrist, Finger, and Primary/Secondary as "Weapon") are one group, compared
 against the first one you're wearing. Random affixes are marked with `*`.
 
