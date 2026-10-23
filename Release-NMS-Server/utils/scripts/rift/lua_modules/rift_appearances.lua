@@ -6,7 +6,7 @@
 -- global: models the client loads in every zone (from Resources/GlobalLoad.txt), used everywhere.
 -- ============================================================================
 
-local M = { zones = {}, bosses = {}, global = {} }
+local M = { zones = {}, bosses = {}, global = {}, size_cap = {} }
 
 M.zones["codecay"] = {
     { race = 250, gender = 2, texture = 0, helmtexture = 0, size = 12, bodytype = 3, name = "Ethereal Banshee" },
@@ -129,7 +129,6 @@ M.zones["sleeper"] = {
     { race = 157, gender = 2, texture = 1, helmtexture = 1, size = 12, bodytype = 26, name = "Scholarly Wyvern" },
     { race = 174, gender = 2, texture = 0, helmtexture = 0, size = 12, bodytype = 3, name = "Scorn Spectre" },
     { race = 432, gender = 2, texture = 2, helmtexture = 2, size = 12, bodytype = 23, name = "Ancient Drakonine" },
-    { race = 464, gender = 2, texture = 3, helmtexture = 3, size = 12, bodytype = 1, name = "Ancient Caretaker" },
 }
 
 M.zones["velketor"] = {
@@ -152,10 +151,7 @@ M.zones["hateplaneb"] = {
     { race = 85, gender = 2, texture = 0, helmtexture = 0, size = 7, bodytype = 3, name = "Loathing Lich" },
     { race = 98, gender = 1, texture = 0, helmtexture = 0, size = 7, bodytype = 3, name = "Forsaken Revenant" },
     { race = 122, gender = 2, texture = 0, helmtexture = 0, size = 3, bodytype = 3, name = "Ashenbone Drake" },
-    { race = 351, gender = 1, texture = 0, helmtexture = 0, size = 6, bodytype = 1, name = "Warlord Of Hate" },
-    { race = 352, gender = 0, texture = 0, helmtexture = 0, size = 6, bodytype = 1, name = "Warlock Of Hate" },
     { race = 415, gender = 2, texture = 1, helmtexture = 1, size = 12, bodytype = 21, name = "Repulsive Rat" },
-    { race = 464, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 1, name = "Abhorrent" },
 }
 
 M.zones["akheva"] = {
@@ -179,98 +175,79 @@ M.zones["griegsend"] = {
 -- bosses[short_name]: named NPC models from that zone, for the Rift Guardian
 M.bosses = {}
 M.bosses["codecay"] = {
-    { race = 269, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 1, name = "Jerill the Enraged" },
-    { race = 266, gender = 2, texture = 0, helmtexture = 0, size = 11, bodytype = 3, name = "Warlord Abouu" },
-    { race = 250, gender = 2, texture = 0, helmtexture = 0, size = 14, bodytype = 3, name = "Spectre of Corruption" },
-    { race = 268, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 1, name = "Witchdoctor Orxkra" },
-    { race = 267, gender = 2, texture = 0, helmtexture = 0, size = 10, bodytype = 3, name = "Barban Cryptwalker" },
-    { race = 270, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 1, name = "Greater Corrupted Pusling" },
+    { race = 719, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 3, name = "Fallen Knight" },
+    { race = 485, gender = 2, texture = 0, helmtexture = 0, size = 9, bodytype = 3, name = "Spectre" },
+    { race = 571, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 3, name = "Ghoul Lord" },
 }
 M.bosses["sebilis"] = {
-    { race = 147, gender = 0, texture = 0, helmtexture = 0, size = 8, bodytype = 3, name = "Echo of Sebilis" },
-    { race = 19, gender = 2, texture = 0, helmtexture = 0, size = 20, bodytype = 26, name = "Trakanon" },
-    { race = 160, gender = 2, texture = 0, helmtexture = 0, size = 16, bodytype = 5, name = "Sebilite Protector" },
-    { race = 26, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 1, name = "Tolapumj" },
-    { race = 28, gender = 2, texture = 1, helmtexture = 0, size = 8, bodytype = 25, name = "Myconid Reaver" },
-    { race = 27, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 1, name = "Froglok Reet Knight" },
+    { race = 606, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 3, name = "Iksar Bonelord" },
+    { race = 605, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 3, name = "Iksar Revenant" },
+    { race = 604, gender = 2, texture = 0, helmtexture = 0, size = 10, bodytype = 3, name = "Dracolich" },
 }
 M.bosses["chardok"] = {
-    { race = 131, gender = 2, texture = 1, helmtexture = 1, size = 13, bodytype = 1, name = "Overking Bathezid" },
-    { race = 164, gender = 2, texture = 0, helmtexture = 0, size = 9, bodytype = 5, name = "Ancient Guardian" },
-    { race = 42, gender = 1, texture = 0, helmtexture = 0, size = 8, bodytype = 21, name = "Deathfang" },
+    { race = 610, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 1, name = "Sarnak Warlord" },
+    { race = 413, gender = 2, texture = 0, helmtexture = 0, size = 9, bodytype = 1, name = "Dragorn" },
+    { race = 464, gender = 2, texture = 0, helmtexture = 0, size = 9, bodytype = 5, name = "Gargoyle" },
 }
 M.bosses["befallen"] = {
+    { race = 719, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 3, name = "Fallen Knight" },
+    { race = 487, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 3, name = "Banshee" },
+    { race = 571, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 3, name = "Ghoul Lord" },
 }
 M.bosses["karnor"] = {
-    { race = 20, gender = 2, texture = 0, helmtexture = 1, size = 9, bodytype = 28, name = "Venril Sathir" },
-    { race = 164, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 5, name = "Construct of Sathir" },
-    { race = 147, gender = 0, texture = 0, helmtexture = 1, size = 9, bodytype = 3, name = "Spectral Knight" },
-    { race = 146, gender = 2, texture = 0, helmtexture = 1, size = 9, bodytype = 3, name = "Spectral Knight" },
-    { race = 160, gender = 2, texture = 2, helmtexture = 0, size = 8, bodytype = 5, name = "Undead Jailer" },
-    { race = 166, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 7, name = "Hangnail" },
+    { race = 497, gender = 0, texture = 0, helmtexture = 0, size = 8, bodytype = 3, name = "Vampire Lord" },
+    { race = 719, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 3, name = "Fallen Knight" },
+    { race = 606, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 3, name = "Iksar Bonelord" },
 }
 M.bosses["mistmoore"] = {
-    { race = 42, gender = 2, texture = 1, helmtexture = 0, size = 8, bodytype = 21, name = "Black Dire" },
+    { race = 497, gender = 0, texture = 0, helmtexture = 0, size = 8, bodytype = 3, name = "Vampire Lord" },
+    { race = 454, gender = 2, texture = 0, helmtexture = 0, size = 9, bodytype = 2, name = "Werewolf" },
+    { race = 464, gender = 2, texture = 0, helmtexture = 0, size = 9, bodytype = 5, name = "Gargoyle" },
 }
 M.bosses["fearplane"] = {
-    { race = 46, gender = 2, texture = 0, helmtexture = 0, size = 12, bodytype = 1, name = "Enraged Imp" },
-    { race = 121, gender = 2, texture = 0, helmtexture = 1, size = 8, bodytype = 23, name = "Wraith of A Shissar" },
-    { race = 95, gender = 2, texture = 0, helmtexture = 0, size = 20, bodytype = 7, name = "Cazic Thule" },
-    { race = 17, gender = 2, texture = 0, helmtexture = 0, size = 16, bodytype = 5, name = "Fright" },
-    { race = 85, gender = 2, texture = 0, helmtexture = 0, size = 12, bodytype = 3, name = "The Tempest Reaver" },
-    { race = 99, gender = 2, texture = 0, helmtexture = 0, size = 14, bodytype = 1, name = "Amygdalan Knight" },
+    { race = 670, gender = 2, texture = 0, helmtexture = 0, size = 12, bodytype = 6, name = "Avatar of Fear" },
+    { race = 663, gender = 2, texture = 0, helmtexture = 0, size = 9, bodytype = 6, name = "Amygdalan" },
+    { race = 466, gender = 2, texture = 0, helmtexture = 0, size = 9, bodytype = 6, name = "Dark Lord" },
 }
 M.bosses["cazicthule"] = {
+    { race = 670, gender = 2, texture = 0, helmtexture = 0, size = 12, bodytype = 6, name = "Avatar of Fear" },
+    { race = 605, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 3, name = "Iksar Revenant" },
+    { race = 663, gender = 2, texture = 0, helmtexture = 0, size = 9, bodytype = 6, name = "Amygdalan" },
 }
 M.bosses["charasis"] = {
-    { race = 161, gender = 2, texture = 0, helmtexture = 0, size = 10, bodytype = 3, name = "The Undertaker Lord" },
-    { race = 160, gender = 2, texture = 2, helmtexture = 0, size = 10, bodytype = 5, name = "Mortiferous Protector" },
-    { race = 45, gender = 2, texture = 0, helmtexture = 1, size = 8, bodytype = 3, name = "Drusella Sathir" },
-    { race = 146, gender = 2, texture = 0, helmtexture = 1, size = 9, bodytype = 3, name = "Howling Spectre" },
-    { race = 159, gender = 2, texture = 0, helmtexture = 0, size = 9, bodytype = 7, name = "The Crypt Excavator" },
-    { race = 145, gender = 2, texture = 1, helmtexture = 0, size = 8, bodytype = 23, name = "Sentient Bile" },
+    { race = 605, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 3, name = "Iksar Revenant" },
+    { race = 491, gender = 2, texture = 0, helmtexture = 0, size = 10, bodytype = 3, name = "Bone Golem" },
+    { race = 485, gender = 2, texture = 0, helmtexture = 0, size = 9, bodytype = 3, name = "Spectre" },
 }
 M.bosses["permafrost"] = {
-    { race = 49, gender = 2, texture = 1, helmtexture = 1, size = 8, bodytype = 26, name = "Lady Vox" },
-    { race = 38, gender = 2, texture = 4, helmtexture = 0, size = 9, bodytype = 22, name = "Giant Wooly Spider" },
+    { race = 523, gender = 2, texture = 0, helmtexture = 0, size = 14, bodytype = 4, name = "Frost Giant" },
+    { race = 417, gender = 2, texture = 0, helmtexture = 0, size = 10, bodytype = 24, name = "Gelidran" },
+    { race = 626, gender = 2, texture = 0, helmtexture = 0, size = 14, bodytype = 4, name = "Rallosian Giant" },
 }
 M.bosses["sleeper"] = {
-    { race = 195, gender = 2, texture = 1, helmtexture = 1, size = 20, bodytype = 30, name = "Kildrukaun the Ancient" },
-    { race = 184, gender = 2, texture = 1, helmtexture = 1, size = 20, bodytype = 30, name = "Tjudawos the Ancient" },
-    { race = 17, gender = 0, texture = 0, helmtexture = 0, size = 20, bodytype = 5, name = "The Final Arbiter" },
-    { race = 49, gender = 2, texture = 2, helmtexture = 2, size = 8, bodytype = 26, name = "Hraashna the Warder" },
-    { race = 89, gender = 2, texture = 3, helmtexture = 3, size = 20, bodytype = 1, name = "Drakonine Guardian" },
-    { race = 29, gender = 0, texture = 0, helmtexture = 0, size = 20, bodytype = 5, name = "The Overseer" },
+    { race = 604, gender = 2, texture = 0, helmtexture = 0, size = 15, bodytype = 3, name = "Dracolich" },
+    { race = 530, gender = 2, texture = 0, helmtexture = 0, size = 15, bodytype = 26, name = "Ancient Dragon" },
+    { race = 572, gender = 2, texture = 0, helmtexture = 0, size = 12, bodytype = 5, name = "Clockwork Guardian" },
 }
 M.bosses["velketor"] = {
-    { race = 189, gender = 0, texture = 0, helmtexture = 0, size = 20, bodytype = 4, name = "Velketor the Sorcerer" },
-    { race = 101, gender = 2, texture = 1, helmtexture = 0, size = 8, bodytype = 1, name = "Lord Doljonijiarnimorinar" },
-    { race = 48, gender = 2, texture = 3, helmtexture = 0, size = 10, bodytype = 1, name = "Khelkar Icepaw" },
-    { race = 17, gender = 0, texture = 0, helmtexture = 0, size = 10, bodytype = 5, name = "Kerdelb" },
-    { race = 29, gender = 0, texture = 0, helmtexture = 0, size = 8, bodytype = 5, name = "Meljemor" },
-    { race = 38, gender = 2, texture = 5, helmtexture = 0, size = 8, bodytype = 22, name = "The Brood Master" },
+    { race = 441, gender = 2, texture = 0, helmtexture = 0, size = 10, bodytype = 22, name = "Spider Queen" },
+    { race = 417, gender = 2, texture = 0, helmtexture = 0, size = 10, bodytype = 24, name = "Gelidran" },
+    { race = 485, gender = 2, texture = 0, helmtexture = 0, size = 9, bodytype = 3, name = "Spectre" },
 }
 M.bosses["hateplaneb"] = {
-    { race = 123, gender = 2, texture = 0, helmtexture = 0, size = 20, bodytype = 1, name = "Innoruuk" },
-    { race = 464, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 1, name = "Grim Abhorrent Kaltik" },
-    { race = 33, gender = 2, texture = 1, helmtexture = 0, size = 8, bodytype = 3, name = "Lord of Fury" },
-    { race = 17, gender = 2, texture = 1, helmtexture = 1, size = 20, bodytype = 5, name = "Master of Vengence" },
-    { race = 70, gender = 1, texture = 1, helmtexture = 1, size = 12, bodytype = 3, name = "Mistress of Malevolence" },
-    { race = 415, gender = 2, texture = 1, helmtexture = 1, size = 12, bodytype = 21, name = "A Hideous Rat" },
+    { race = 466, gender = 2, texture = 0, helmtexture = 0, size = 9, bodytype = 6, name = "Dark Lord" },
+    { race = 351, gender = 0, texture = 0, helmtexture = 0, size = 8, bodytype = 1, name = "Knight of Hate" },
+    { race = 352, gender = 0, texture = 0, helmtexture = 0, size = 8, bodytype = 1, name = "Arcanist of Hate" },
 }
 M.bosses["akheva"] = {
-    { race = 224, gender = 0, texture = 0, helmtexture = 0, size = 20, bodytype = 3, name = "The Itraer Vius" },
-    { race = 230, gender = 0, texture = 2, helmtexture = 47, size = 14, bodytype = 14, name = "Shar Vinitras" },
-    { race = 203, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 1, name = "The Insanity Crawler" },
-    { race = 215, gender = 2, texture = 2, helmtexture = 47, size = 8, bodytype = 1, name = "Lorekeeper" },
+    { race = 722, gender = 0, texture = 0, helmtexture = 0, size = 8, bodytype = 1, name = "Akheva Overlord" },
+    { race = 723, gender = 2, texture = 0, helmtexture = 0, size = 9, bodytype = 6, name = "Servant of Shadow" },
+    { race = 708, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 3, name = "Alaran Ghost" },
 }
 M.bosses["griegsend"] = {
-    { race = 224, gender = 0, texture = 0, helmtexture = 0, size = 12, bodytype = 3, name = "Servitor of Luclin" },
-    { race = 231, gender = 2, texture = 0, helmtexture = 1, size = 19, bodytype = 7, name = "Grieg Veneficus" },
-    { race = 237, gender = 0, texture = 0, helmtexture = 0, size = 8, bodytype = 1, name = "Praetorian Myral" },
-    { race = 20, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 28, name = "Amnarra Nogzabin" },
-    { race = 208, gender = 0, texture = 0, helmtexture = 0, size = 8, bodytype = 12, name = "Servant of the Magistrate" },
-    { race = 214, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 7, name = "Wailing Mercenary" },
+    { race = 588, gender = 0, texture = 0, helmtexture = 0, size = 8, bodytype = 3, name = "Grieg Phantom" },
+    { race = 659, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 5, name = "Marionette" },
+    { race = 487, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 3, name = "Banshee" },
 }
 
 M.global = {
@@ -309,5 +286,8 @@ M.global = {
     { race = 326, gender = 2, texture = 1, helmtexture = 0, size = 3, bodytype = 21, name = "Defective Clockwork" },
     { race = 327, gender = 2, texture = 0, helmtexture = 0, size = 3, bodytype = 21, name = "Erratic Arachnid" },
 }
+
+-- size_cap[short_name]: tallest model allowed in tight zones (see SIZE_CAP in the generator)
+M.size_cap["befallen"] = 9
 
 return M

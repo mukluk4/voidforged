@@ -5,23 +5,41 @@
 #   - the rift controller at the entry point
 #   - doors (unlocked), zone points and ground spawns copied from version 0
 #   - a version-1 zone row: no flag / level / status requirement, entry point as the safe spot
-import json, os, subprocess, sys
+#
+#   python gen_rift_zones.py <eqemu_config.json> <out.sql> <out rift_zones.lua>
+#          [--zones a,b,c] [--entry zone:x,y,z ...] [--mysql <path to mysql.exe>]
+# Without --zones the default list below is used. --entry overrides an entry point where the zone's
+# safe point is unusable (0,0,0); repeat it per zone.
+import argparse, json, os, subprocess, sys
 
-cfg = json.load(open(sys.argv[1]))['server']['database']
-sql_out, lua_out = sys.argv[2], sys.argv[3]
+ARCHETYPE_GROUP = 5003834      # spawngroup "rift_archetypes" (the four archetype NPC types)
+CONTROLLER_GROUP = 5003835     # spawngroup holding the rift controller NPC
+VERSION = 1                    # instance version the rift copies live in (rift_config.lua instance_version)
+
+DEFAULT_ZONES = ['codecay', 'sebilis', 'chardok',
+                 'befallen', 'karnor', 'mistmoore', 'fearplane', 'cazicthule', 'charasis', 'permafrost',
+                 'sleeper', 'velketor', 'hateplaneb', 'akheva', 'griegsend']
+DEFAULT_ENTRY = {'sleeper': (1, -40, 3)}
+
+ap = argparse.ArgumentParser()
+ap.add_argument('config')
+ap.add_argument('sql_out')
+ap.add_argument('lua_out')
+ap.add_argument('--zones', help='comma separated zone short names (default: this server\'s 15)')
+ap.add_argument('--entry', action='append', default=[], help='zone:x,y,z entry point override')
+ap.add_argument('--mysql', default=r'C:\Program Files\MariaDB 12.3\bin\mysql.exe')
+args = ap.parse_args()
+
+cfg = json.load(open(args.config))['server']['database']
+sql_out, lua_out = args.sql_out, args.lua_out
 env = dict(os.environ, MYSQL_PWD=cfg['password'])
-mysql = r'C:\Program Files\MariaDB 12.3\bin\mysql.exe'
+mysql = args.mysql
 
-ARCHETYPE_GROUP = 5003834
-CONTROLLER_GROUP = 5003835
-VERSION = 1
-
-ZONES = ['codecay', 'sebilis', 'chardok',
-         'befallen', 'karnor', 'mistmoore', 'fearplane', 'cazicthule', 'charasis', 'permafrost',
-         'sleeper', 'velketor', 'hateplaneb', 'akheva', 'griegsend']
-
-# Entry points where the zone's safe point is unusable (0,0,0): where its zone line lands you
-ENTRY_OVERRIDE = {'sleeper': (1, -40, 3)}
+ZONES = [z.strip() for z in args.zones.split(',')] if args.zones else DEFAULT_ZONES
+ENTRY_OVERRIDE = dict(DEFAULT_ENTRY)
+for e in args.entry:
+    zone, xyz = e.split(':')
+    ENTRY_OVERRIDE[zone] = tuple(float(v) for v in xyz.split(','))
 
 
 def query(sql):

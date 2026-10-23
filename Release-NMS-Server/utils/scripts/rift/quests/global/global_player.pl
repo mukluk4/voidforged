@@ -1,3 +1,9 @@
+# NMS: Greater Rift hub (The Void) access. A server without a progression gate can set
+# $VOID_ACCESS_BUCKET to '' to let everyone in.
+my $VOID_ZONE          = 'thevoida';
+my $VOID_ACCESS_BUCKET = 'pop.flags.maelin';      # account bucket = 1 once Plane of Time access is earned
+my @VOID_KICK_TO       = (151, 185, -835, 4, 390);  # zone id, x, y, z, heading (Bazaar safe spot)
+
 sub EVENT_SIGNAL {
     if ($signal == 666) {
         plugin::UpdateEoMAward($client);
@@ -32,13 +38,13 @@ sub EVENT_ENTERZONE {
 
 	# NMS: The Void (Greater Rifts) opens once the account has Plane of Time access: the Maelin flag,
 	# earned by defeating the four elemental gods. GMs can always enter.
-	if ($zonesn eq 'thevoida' && !$client->GetGM() && !HasVoidAccess($client)) {
+	if ($zonesn eq $VOID_ZONE && !$client->GetGM() && !HasVoidAccess($client)) {
 		$client->Message(4, "Your vision blurs. You lose conciousness and wake up in a familiar place.");
-		$client->MovePC(151, 185, -835, 4, 390); # Bazaar Safe Location.
+		$client->MovePC(@VOID_KICK_TO);
 	}
 
 	# Flagged characters get The Void on the Bazaar map (also covers flags earned before this existed)
-	if (HasVoidAccess($client) && $client->UnlockWaypoint("thevoida")) {
+	if (HasVoidAccess($client) && $client->UnlockWaypoint($VOID_ZONE)) {
 		$client->Message(263, "The fabric of time shivers around you. The Void now appears on the map in the Bazaar.");
 	}
 
@@ -792,5 +798,6 @@ sub UpdateDayNightCycle {
 # NMS: Plane of Time access (account-wide Maelin flag) unlocks The Void
 sub HasVoidAccess {
 	my $c = shift;
-	return (($c->GetAccountBucket("pop.flags.maelin") || 0) == 1);
+	return 1 if $VOID_ACCESS_BUCKET eq '';
+	return (($c->GetAccountBucket($VOID_ACCESS_BUCKET) || 0) == 1);
 }

@@ -24,14 +24,16 @@ local function pick_model()
     return biggest
 end
 
-local ENRAGE_MS         = 120000
-local PULSE_MS          = 8000
-local HATE_WIPE_EVERY   = 3        -- mechanic 3 fires every Nth pulse
+-- Timers and spells are set in rift_config.lua
+local cfg = require("rift_config").guardian
 
--- Existing spells as placeholders until custom ones are made
+local ENRAGE_MS         = cfg.enrage_ms
+local PULSE_MS          = cfg.pulse_ms
+local HATE_WIPE_EVERY   = cfg.hate_wipe_every   -- mechanic 3 fires every Nth pulse
+
 local SPELL = {
-    ENRAGE      = 3761,    -- Blind Rage: self, +65% haste, +250 ATK, -600 AC, 2 minutes
-    ENERGY_WAVE = 3473,    -- Catastrophe: magic PBAOE, 850 dmg, 35 range
+    ENRAGE      = cfg.spells.enrage,
+    ENERGY_WAVE = cfg.spells.energy_wave,
 }
 
 function event_spawn(e)
@@ -44,7 +46,7 @@ function event_spawn(e)
             gender      = model.gender,
             texture     = model.texture,
             helmtexture = model.helmtexture,
-            size        = math.max(model.size, 12),
+            size        = APPEARANCES.size_cap[eq.get_zone_short_name()] or math.max(model.size, 12),
         })
         npc:TempName((string.gsub("Anachronism of " .. model.name, " ", "_")))
         if model.bodytype then

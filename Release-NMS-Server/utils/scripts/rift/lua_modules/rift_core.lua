@@ -12,47 +12,56 @@
 local rift = {}
 
 -- ----------------------------------------------------------------------------
--- Configuration
+-- Configuration: every server-specific value lives in rift_config.lua
 -- ----------------------------------------------------------------------------
-rift.HUB_ZONE_ID = 459            -- thevoida (The Void), confirmed in zone table
-rift.HUB_X, rift.HUB_Y, rift.HUB_Z, rift.HUB_H = 0, 0, 0, 0
+local cfg = require("rift_config")
 
-rift.INSTANCE_VERSION = 1         -- spawn2.version that holds the rift spawn set
-rift.TIME_LIMIT       = 900       -- seconds to kill the Guardian
-rift.INSTANCE_GRACE   = 180       -- extra instance life so players can walk out after a fail
-rift.TARGET_PROGRESS  = 10000     -- 100.00%
-rift.MAX_TIER         = 500       -- hard cap; below it the ceiling is each player's progression
+local SPECIAL_CASTING_RESIST_DIFFICULTY = 43 -- SpecialAbility::CastingResistDifficulty
+local SPECIAL_COUNTER_AVOID_DAMAGE      = 44 -- SpecialAbility::CounterAvoidDamage (param 0: all avoidance)
 
--- All rift NPCs live in the 1200000-1200099 block (created by rift_setup.sql Part 0)
+-- base + per_tier * tier, never past max (the penetration settings in rift_config.lua)
+local function by_tier(c, tier)
+    return math.floor(math.min(c.base + c.per_tier * tier, c.max))
+end
+rift.CONFIG = cfg
+
+rift.HUB_ZONE_ID = cfg.hub.zone_id
+rift.HUB_X, rift.HUB_Y, rift.HUB_Z, rift.HUB_H = cfg.hub.x, cfg.hub.y, cfg.hub.z, cfg.hub.h
+
+rift.INSTANCE_VERSION = cfg.instance_version
+rift.TIME_LIMIT       = cfg.time_limit
+rift.INSTANCE_GRACE   = cfg.instance_grace
+rift.TARGET_PROGRESS  = cfg.target_progress
+rift.MAX_TIER         = cfg.max_tier
+
 rift.NPC = {
-    CONTROLLER = 1200000,         -- invisible, untargetable zone controller
-    GUARDIAN   = 1200001,
-    PYLON      = 1200005,
-    PORTAL     = 1200009,
-    VENDOR     = 1200010,         -- Chronal_Quartermaster (The Void)
-    KEEPER     = 1200011,         -- The_Rift_Keeper (The Void)
-    MELEE      = 1200020,
-    CASTER     = 1200021,
-    DISRUPT    = 1200022,
-    ELITE      = 1200023,
+    CONTROLLER = cfg.npc.controller,
+    GUARDIAN   = cfg.npc.guardian,
+    PYLON      = cfg.npc.pylon,
+    PORTAL     = cfg.npc.portal,
+    VENDOR     = cfg.npc.vendor,
+    KEEPER     = cfg.npc.keeper,
+    MELEE      = cfg.npc.melee,
+    CASTER     = cfg.npc.caster,
+    DISRUPT    = cfg.npc.disrupt,
+    ELITE      = cfg.npc.elite,
 }
 
-rift.PROGRESS = { TRASH = 100, ELITE = 400 }   -- 1.00% / 4.00%
+rift.PROGRESS = { TRASH = cfg.progress.trash, ELITE = cfg.progress.elite }
 
--- Clear reward: alternate currency, spent at the Void vendor.
--- amount = BASE + PER_TIER * tier, +SPEED_BONUS% if cleared in under SPEED_SECONDS
+-- Clear reward: amount = BASE + PER_TIER * tier, +SPEED_BONUS% if cleared in under SPEED_SECONDS
 rift.REWARD = {
-    CURRENCY_ID   = 2,       -- alternate_currency.id (1 and 6 are taken on this server)
-    CURRENCY_NAME = "Chronal Shards",
-    BASE          = 5,
-    PER_TIER      = 2,
-    SPEED_SECONDS = 600,
-    SPEED_BONUS   = 25,
+    CURRENCY_ID   = cfg.reward.currency_id,
+    CURRENCY_NAME = cfg.reward.currency_name,
+    BASE          = cfg.reward.base,
+    PER_TIER      = cfg.reward.per_tier,
+    SPEED_SECONDS = cfg.reward.speed_seconds,
+    SPEED_BONUS   = cfg.reward.speed_bonus,
 }
 
-local PYLON_THRESHOLDS = { 25, 50, 75 }
-local TIME_WARNINGS    = { 720, 540, 360, 180, 60 }
-local PROGRESS_STEP    = 5      -- announce progress every 5%
+local PYLON_THRESHOLDS = cfg.pylon_at
+local TIME_WARNINGS    = cfg.time_warnings
+local PROGRESS_STEP    = cfg.progress_step
 
 -- Data bucket keys (all written with an expiry so they clean themselves up)
 function rift.key_tier(instance_id)  return "gr_tier_"   .. instance_id end
@@ -164,6 +173,13 @@ end
 -- Stat scaling (shared by trash, elites and the Guardian)
 -- ----------------------------------------------------------------------------
 function rift.apply_tier_scaling(npc, tier, is_boss)
+    -- Spell and melee penetration apply from tier 1 (see rift_config.lua)
+    npc:SetSpecialAbility(SPECIAL_CASTING_RESIST_DIFFICULTY, 1)
+    npc:SetSpecialAbilityParam(SPECIAL_CASTING_RESIST_DIFFICULTY, 0, -by_tier(cfg.spell_penetration, tier or 1))
+    npc:ModifyNPCStat("heroic_strikethrough", tostring(by_tier(cfg.heroic_strikethrough, tier or 1)))
+    npc:SetSpecialAbility(SPECIAL_COUNTER_AVOID_DAMAGE, 1)
+    npc:SetSpecialAbilityParam(SPECIAL_COUNTER_AVOID_DAMAGE, 0, by_tier(cfg.counter_avoid, tier or 1))
+
     local steps = (tier or 1) - 1
     if steps <= 0 then return end
 
@@ -182,11 +198,13 @@ function rift.apply_tier_scaling(npc, tier, is_boss)
     -- Spell damage (nukes, DoTs, champion and Guardian AoEs) scales like melee damage
     npc:ModifyNPCStat("spellscale", tostring(math.floor(100 * dmg_factor)))
     npc:ModifyNPCStat("ac",      tostring(math.floor(npc:GetAC() * def_factor)))
-    npc:ModifyNPCStat("mr",      tostring(math.floor(npc:GetMR() * def_factor)))
-    npc:ModifyNPCStat("fr",      tostring(math.floor(npc:GetFR() * def_factor)))
-    npc:ModifyNPCStat("cr",      tostring(math.floor(npc:GetCR() * def_factor)))
-    npc:ModifyNPCStat("pr",      tostring(math.floor(npc:GetPR() * def_factor)))
-    npc:ModifyNPCStat("dr",      tostring(math.floor(npc:GetDR() * def_factor)))
+    -- Resists grow by a flat amount, not a factor, so players' spells still land at high tiers
+    local resist_add = by_tier(cfg.resist_scaling, tier)
+    npc:ModifyNPCStat("mr",      tostring(npc:GetMR() + resist_add))
+    npc:ModifyNPCStat("fr",      tostring(npc:GetFR() + resist_add))
+    npc:ModifyNPCStat("cr",      tostring(npc:GetCR() + resist_add))
+    npc:ModifyNPCStat("pr",      tostring(npc:GetPR() + resist_add))
+    npc:ModifyNPCStat("dr",      tostring(npc:GetDR() + resist_add))
     npc:Heal()
 end
 

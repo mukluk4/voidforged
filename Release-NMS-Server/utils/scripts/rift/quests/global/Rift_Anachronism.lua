@@ -82,10 +82,14 @@ function ApplyRandomAppearance(npc)
     if #pool == 0 then return end
     local entry = pool[math.random(1, #pool)]
 
-    -- Executioners (elites) stand a third taller than their kind so they're easy to spot
+    -- Executioners (elites) stand a third taller than their kind so they're easy to spot. Tight zones
+    -- cap everything: regulars at 3/4 of the cap, Executioners at 9/10, leaving the top for the Guardian
+    local cap  = APPEARANCES.size_cap[eq.get_zone_short_name()]
     local size = entry.size
     if npc:GetNPCTypeID() == rift.NPC.ELITE then
-        size = math.min(math.floor(size * 1.33 + 0.5), 16)
+        size = math.min(math.floor(size * 1.33 + 0.5), cap and math.floor(cap * 0.9) or 16)
+    elseif cap then
+        size = math.min(size, math.floor(cap * 0.75))
     end
 
     npc:SendIllusionPacket({

@@ -8,15 +8,20 @@
 
 local affixes = {}
 
-local AFFIX_TYPES = { "Molten", "Vortex", "Arcane" }
-local CHAMPION_CHANCE = 15   -- percent
+local cfg = require("rift_config").champion
 
--- Existing point-blank AoE spells (cast instantly via SpellFinished)
+local AFFIX_TYPES = { "Molten", "Vortex", "Arcane" }
+local CHAMPION_CHANCE = cfg.chance   -- percent
+
+-- Point-blank AoE spells (cast instantly via SpellFinished); set in rift_config.lua
 local SPELL = {
-    MOLTEN_PULSE = 1659,     -- Scintillation: fire, 342 dmg, 25 range
-    MOLTEN_DEATH = 733,      -- Supernova: fire, 854 dmg, 35 range
-    ARCANE_BOLTS = 1653,     -- Jyll's Static Pulse: magic, 495 dmg, 25 range
+    MOLTEN_PULSE = cfg.spells.molten_pulse,
+    MOLTEN_DEATH = cfg.spells.molten_death,
+    ARCANE_BOLTS = cfg.spells.arcane_bolts,
 }
+
+-- Vortex pull: how often (in pulses), who counts as far away, and where they land
+local VORTEX = cfg.vortex
 
 function affixes.get(npc)
     if npc:EntityVariableExists("champion_affix") then
@@ -38,7 +43,7 @@ function affixes.try_initialize(npc)
     npc:ModifyNPCStat("max_hp", tostring(math.floor(npc:GetMaxHP() * 1.5)))
     npc:Heal()
 
-    eq.set_timer("affix_pulse", 4000)
+    eq.set_timer("affix_pulse", cfg.pulse_ms)
     return true
 end
 
@@ -54,12 +59,29 @@ function affixes.on_timer(e)
         npc:SpellFinished(SPELL.MOLTEN_PULSE, npc)
 
     elseif affix == "Vortex" then
-        -- Pull the current target to the champion
-        local target = npc:GetTarget()
-        if target.valid and target:IsClient() then
-            npc:Emote(string.format("'s vortex drags %s in!", target:GetCleanName()))
-            target:GMMove(npc:GetX(), npc:GetY(), npc:GetZ(), target:GetHeading())
+        -- Every few pulses, drag one player who is keeping their distance to just in front of the champion.
+        -- Whoever is already in melee range (the tank) is never pulled.
+        local pulses = tonumber(npc:GetEntityVariable("vortex_pulses")) or 0
+        pulses = pulses + 1
+        npc:SetEntityVariable("vortex_pulses", tostring(pulses))
+        if pulses % VORTEX.every_pulses ~= 0 then return end
+
+        local x, y, z = npc:GetX(), npc:GetY(), npc:GetZ()
+        local far = {}
+        for ent in npc:GetHateList().entries do
+            local m = ent.ent
+            if m.valid and m:IsClient() and m:CalculateDistance(x, y, z) > VORTEX.min_distance then
+                table.insert(far, m)
+            end
         end
+        if #far == 0 then return end
+
+        local target = far[math.random(1, #far)]
+        local dx, dy = target:GetX() - x, target:GetY() - y
+        local len    = math.max(math.sqrt(dx * dx + dy * dy), 1) -- far but straight above/below: no NaN
+        local lx, ly = x + dx / len * VORTEX.land_distance, y + dy / len * VORTEX.land_distance
+        npc:Emote(string.format("'s vortex drags %s in!", target:GetCleanName()))
+        target:GMMove(lx, ly, z, target:CalculateHeadingToTarget(x, y))
 
     elseif affix == "Arcane" then
         npc:Emote(" unleashes spinning arcs of arcane energy!")
