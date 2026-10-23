@@ -5491,7 +5491,9 @@ void Mob::ExecWeaponProc(const EQ::ItemInstance* inst, uint16 spell_id, Mob* on,
 		return;
 	}
 
-	if (IsClient()) {
+	// Target's target procs (remote heals) resolve from the mob themselves; implied targeting would move a
+	// beneficial one onto the mob's target first, so it then landed on that player's target instead
+	if (IsClient() && spells[spell_id].target_type != ST_TargetsTarget) {
 		Mob* new_target = entity_list.GetMob(GetSpellImpliedTargetID(spell_id, on->GetID()));
 		if (new_target) {
 			on = new_target;

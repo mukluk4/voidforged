@@ -5,7 +5,10 @@
 #include "../../common/say_link.h"
 
 #include <algorithm>
+#include <cstring>
 #include <map>
+#include <numeric>
+#include <tuple>
 
 namespace {
 	// Every slot a player can be carrying a dynamic item in, except the bank
@@ -774,6 +777,19 @@ namespace {
 			}
 		}
 
+		// Worn effects from gear and set bonuses; only the ones that change the totals are listed
+		struct WornEffect {
+			uint16      spell_id;
+			uint8       level;
+			std::string source;
+		};
+		std::vector<WornEffect> worn_effects;
+		auto add_worn_effect = [&](const EQ::ItemData *item) {
+			if (item->Worn.Effect > 0 && item->Worn.Type == EQ::item::ItemEffectWorn && IsValidSpell(item->Worn.Effect)) {
+				worn_effects.push_back({static_cast<uint16>(item->Worn.Effect), item->Worn.Level, item->Name});
+			}
+		};
+
 		// Same slots and checks as Mob::CalcItemBonuses / AddItemBonuses (ammo gives nothing)
 		auto mgr    = DynamicItemsManager::Instance();
 		auto counts = [&](const EQ::ItemInstance *inst) {
@@ -792,11 +808,13 @@ namespace {
 				AddItemStats(inst->GetItem(), totals, other);
 				items_worn++;
 			}
+			add_worn_effect(inst->GetItem());
 
 			for (int a = EQ::invaug::SOCKET_BEGIN; a <= EQ::invaug::SOCKET_END; ++a) {
 				const auto aug = inst->GetAugment(a);
 				if (aug && aug->GetAugmentType() && aug->GetItem()) {
 					AddItemStats(aug->GetItem(), totals, other);
+					add_worn_effect(aug->GetItem());
 					augs_worn++;
 				}
 			}
@@ -804,7 +822,34 @@ namespace {
 
 		// Same piece counting and bonus rules as Client::CheckArmorSetBonuses
 		const uint32 class_bits = c->GetClassesBits();
-		std::string  set_lines;
+
+		// Sets are labeled by where their pieces are worn, so an armor and a jewelry set with the same name differ
+		enum SetKind { SetArmor, SetJewelry, SetWeapons };
+		auto set_kind = [](int16 slot) {
+			switch (slot) {
+				case EQ::invslot::slotPrimary:
+				case EQ::invslot::slotSecondary:
+				case EQ::invslot::slotRange:
+				case EQ::invslot::slotAmmo:
+					return SetWeapons;
+				case EQ::invslot::slotCharm:
+				case EQ::invslot::slotEar1:
+				case EQ::invslot::slotEar2:
+				case EQ::invslot::slotFace:
+				case EQ::invslot::slotNeck:
+				case EQ::invslot::slotShoulders:
+				case EQ::invslot::slotBack:
+				case EQ::invslot::slotWaist:
+				case EQ::invslot::slotFinger1:
+				case EQ::invslot::slotFinger2:
+					return SetJewelry;
+				default:
+					return SetArmor;
+			}
+		};
+		static const char *set_kind_names[] = {"Armor", "Jewelry", "Weapons"};
+
+		std::vector<std::tuple<SetKind, std::string, std::string>> set_entries; // kind, name, lines
 		for (const auto &[set_id, pieces] : c->CountEquippedArmorSetPieces()) {
 			const auto bonuses = g_armor_set_bonuses_map.find(set_id);
 			if (bonuses == g_armor_set_bonuses_map.end()) {
@@ -813,6 +858,7 @@ namespace {
 
 			// Name the set after a worn piece ("Bladesinger's Regalia Helm" -> "Bladesinger's Regalia")
 			std::string name = fmt::format("Set {}", set_id);
+			SetKind     kind = SetArmor;
 			for (int16 s = EQ::invslot::EQUIPMENT_BEGIN; s <= EQ::invslot::EQUIPMENT_END; ++s) {
 				const auto inst = c->GetInv().GetItem(s);
 				const auto it   = inst ? g_armor_set_item_map.find(inst->GetID()) : g_armor_set_item_map.end();
@@ -824,6 +870,7 @@ namespace {
 					if (const auto space = name.rfind(' '); space != std::string::npos) {
 						name.resize(space);
 					}
+					kind = set_kind(s);
 					break;
 				}
 			}
@@ -841,6 +888,10 @@ namespace {
 					active.push_back(b.min_pieces);
 				}
 
+				if (b.spell_id && b.spell_type == ArmorSetSpellWorn) {
+					worn_effects.push_back({b.spell_id, c->GetLevel(), fmt::format("{} {} set", name, set_kind_names[kind])});
+					continue;
+				}
 				if (b.spell_id) {
 					spell_bonuses.push_back(fmt::format(
 						"{} ({})",
@@ -868,15 +919,55 @@ namespace {
 				return s.empty() ? std::string("none") : Strings::Join(s, "/");
 			};
 
-			set_lines += fmt::format(
-				"{} - {} worn, bonuses at {}, active: {}",
+			std::string lines = fmt::format(
+				"{} {} - {} worn, bonuses at {}, active: {}",
 				DialogueWindow::ColorMessage("white", name),
+				DialogueWindow::ColorMessage("dark_grey", fmt::format("({})", set_kind_names[kind])),
 				pieces,
 				join(thresholds),
 				active.empty() ? DialogueWindow::ColorMessage("red", "none") : DialogueWindow::ColorMessage("green", join(active))
 			) + DialogueWindow::Break();
 			for (const auto &spell_bonus : spell_bonuses) {
-				set_lines += "&nbsp;&nbsp;" + DialogueWindow::ColorMessage("light_blue_1", spell_bonus) + DialogueWindow::Break();
+				lines += "&nbsp;&nbsp;" + DialogueWindow::ColorMessage("light_blue_1", spell_bonus) + DialogueWindow::Break();
+			}
+			set_entries.emplace_back(kind, name, std::move(lines));
+		}
+
+		// Armor, then jewelry, then weapons; by name within each
+		std::sort(set_entries.begin(), set_entries.end());
+		std::string set_lines;
+		for (const auto &e : set_entries) {
+			set_lines += std::get<2>(e);
+		}
+
+		// Worn effects of one family don't stack (highest wins, Spells:AdditiveBonusWornType), so drop each
+		// effect whose removal leaves the bonuses unchanged; of two equal effects the later one is kept
+		auto worn_bonuses = [&](const std::vector<size_t> &keep, size_t skip) {
+			StatBonuses b;
+			memset(&b, 0, sizeof(StatBonuses));
+			for (const auto i : keep) {
+				if (i != skip) {
+					c->ApplySpellsBonuses(worn_effects[i].spell_id, worn_effects[i].level, &b, 0, EQ::item::ItemEffectWorn);
+				}
+			}
+			return b;
+		};
+		std::vector<size_t> working(worn_effects.size());
+		std::iota(working.begin(), working.end(), 0);
+		const auto all_worn = worn_bonuses(working, SIZE_MAX);
+		for (size_t i = 0; i < worn_effects.size(); ++i) {
+			const auto without = worn_bonuses(working, i);
+			if (!memcmp(&without, &all_worn, sizeof(StatBonuses))) {
+				working.erase(std::find(working.begin(), working.end(), i));
+			}
+		}
+		if (!working.empty()) {
+			set_lines += DialogueWindow::ColorMessage("white", "Worn effects") + DialogueWindow::Break();
+			for (const auto i : working) {
+				set_lines += "&nbsp;&nbsp;" + DialogueWindow::ColorMessage(
+					"light_blue_1",
+					fmt::format("{} ({})", spells[worn_effects[i].spell_id].name, worn_effects[i].source)
+				) + DialogueWindow::Break();
 			}
 		}
 

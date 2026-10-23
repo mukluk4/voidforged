@@ -15311,11 +15311,13 @@ std::unordered_map<uint32, uint32> Client::CountEquippedArmorSetPieces() {
 		EQ::invslot::slotLegs,
 		EQ::invslot::slotFeet,
 
-		// Jewelry & Accessories (7)
+		// Jewelry & Accessories (9)
 		EQ::invslot::slotEar1,
 		EQ::invslot::slotEar2,
+		EQ::invslot::slotFace,
 		EQ::invslot::slotNeck,
 		EQ::invslot::slotShoulders,
+		EQ::invslot::slotBack,
 		EQ::invslot::slotFinger1,
 		EQ::invslot::slotFinger2,
 		EQ::invslot::slotWaist,
