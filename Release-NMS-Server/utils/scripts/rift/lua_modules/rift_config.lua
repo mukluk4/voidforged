@@ -18,6 +18,10 @@ return {
     instance_grace = 180,     -- extra instance life so players can walk out after a fail
     max_tier       = 500,     -- hard cap; below it each player's own progression is the ceiling
 
+    -- Character data bucket holding the deepest clear; tier gear vendor items are hidden until it reaches
+    -- their unlock tier (merchantlist bucket_name / bucket_value, comparison 2 = >=)
+    gear_unlock_bucket = "rift_deepest",
+
     -- Progress to a full rift (10000 = 100.00%) and what each kill is worth
     target_progress = 10000,
     progress        = { trash = 100, elite = 400 },                -- 1% / 4%
@@ -64,6 +68,22 @@ return {
     -- The mobs' own resists: a flat amount added per tier (AC still grows 3% per tier). Multiplying them
     -- made players' spells unlandable past ~tier 50; this adds +25 by tier 100, +100 at most (tier 400)
     resist_scaling       = { base = 0, per_tier = 0.25, max = 100 },
+
+    -- Pylons (one picked at random per spawn). Existing spells only, so no client spell file change.
+    --   nuke:   point-blank AoE cast by the activator, centred on them each pulse
+    --   splash: applied to every group member each pulse (heal + cure)
+    --   buff:   each group member casts it on themselves
+    -- pulses/interval_ms: how many times it fires and how far apart; stops if the activator dies or leaves
+    pylons = {
+        { name = "Conduit Pylon",   kind = "nuke",   spell_id = 35779, pulses = 6, interval_ms = 3000,   -- Circle of Flame Rk. III: 5493 fire, radius 35
+          emote = "surges with chronal fire, scorching every foe around them!" },
+        { name = "Cleansing Pylon", kind = "splash", spell_id = 34412, pulses = 5, interval_ms = 6000,   -- Splash of Cleansing Rk. III: 2276 heal, cures poison/disease/curse
+          emote = "washes over the group, mending wounds and purging afflictions!" },
+        { name = "Shielding Pylon", kind = "buff",   spell_id = 38306,                                   -- Elemental Shield: absorbs 100% up to 40000, +2000 HP
+          emote = "wraps the group in a shimmering elemental ward!" },
+        { name = "Speed Pylon",     kind = "buff",   spell_id = 39243,                                   -- Expedited Delivery: +125 overhaste, +300 run, 25% faster casts
+          emote = "accelerates time around the group to blinding speeds!" },
+    },
 
     -- Champion affixes on rift trash
     champion = {

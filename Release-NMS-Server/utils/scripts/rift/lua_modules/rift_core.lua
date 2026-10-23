@@ -136,6 +136,8 @@ local function record_clear(client, tier)
     local deepest = rift.get_deepest(client:CharacterID())
     if tier == deepest + 1 then
         eq.set_data(rift.key_deepest(client:CharacterID()), tostring(tier))
+        -- Character-scoped copy: the tier gear vendors hide items until it reaches their unlock tier
+        client:SetBucket(cfg.gear_unlock_bucket, tostring(tier))
         client:Message(15, string.format("Your deepest Fracture is now Tier %d. Tier %d is open to you.", tier, math.min(tier + 1, rift.MAX_TIER)))
     elseif tier > deepest + 1 then
         client:Message(15, string.format("This Fracture was beyond your own reach; your deepest remains Tier %d.", deepest))
