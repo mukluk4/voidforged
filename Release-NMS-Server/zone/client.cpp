@@ -15261,7 +15261,7 @@ void LoadArmorSetBonuses() {
 		}
 	}
 
-	auto results_bonuses = database.QueryDatabase("SELECT set_id, min_pieces, class_mask, stat_id, stat_value, affix FROM armor_set_bonuses");
+	auto results_bonuses = database.QueryDatabase("SELECT set_id, min_pieces, class_mask, stat_id, stat_value, affix, spell_id, spell_type FROM armor_set_bonuses");
 	if (results_bonuses.Success()) {
 		for (auto row = results_bonuses.begin(); row != results_bonuses.end(); ++row) {
 			ArmorSetBonusDef bonus;
@@ -15271,6 +15271,13 @@ void LoadArmorSetBonuses() {
 			bonus.class_mask = atoi(row[2]);
 			bonus.stat_id = atoi(row[3]);
 			bonus.stat_value = atoi(row[4]);
+			bonus.spell_id   = static_cast<uint16>(atoi(row[6]));
+			bonus.spell_type = static_cast<uint8>(atoi(row[7]));
+
+			if (bonus.spell_id && (!IsValidSpell(bonus.spell_id) || bonus.spell_type < ArmorSetSpellWorn || bonus.spell_type > ArmorSetSpellSympathetic)) {
+				LogError("armor_set_bonuses set [{}] has invalid spell [{}] type [{}], skipping", set_id, bonus.spell_id, bonus.spell_type);
+				continue;
+			}
 
 			if (row[5] && row[5][0]) {
 				bonus.affix = DynamicItemsManager::AffixFromCode(row[5]);
@@ -15344,6 +15351,10 @@ void Client::CheckArmorSetBonuses(StatBonuses* itembonuses) {
 
 	const auto equipped_set_counts = CountEquippedArmorSetPieces();
 	uint32 player_class_bit = GetClassesBits();
+
+	// Spell bonuses are rebuilt on every recalculation; weapon procs are synced after the loop
+	std::set<uint16> wanted_procs;
+	m_set_bonus_sympathetic.clear();
 
 	// Process stats and state transitions for each active set
 	for (const auto& [set_id, piece_count] : equipped_set_counts) {
@@ -15420,6 +15431,22 @@ void Client::CheckArmorSetBonuses(StatBonuses* itembonuses) {
 						continue;
 					}
 
+					if (bonus.spell_id) {
+						switch (bonus.spell_type) {
+							case ArmorSetSpellWorn:
+								ApplySpellsBonuses(bonus.spell_id, GetLevel(), itembonuses, 0, EQ::item::ItemEffectWorn);
+								break;
+							case ArmorSetSpellMeleeProc:
+								wanted_procs.insert(bonus.spell_id);
+								break;
+							case ArmorSetSpellSympathetic:
+								// Checked by GetSympatheticFocusEffect on each damage or heal cast
+								m_set_bonus_sympathetic.push_back(bonus.spell_id);
+								break;
+						}
+						continue;
+					}
+
 					switch (bonus.stat_id) {
 						// --- BASIC STATS ---
 					case 1: itembonuses->HP += bonus.stat_value; break;
@@ -15468,5 +15495,21 @@ void Client::CheckArmorSetBonuses(StatBonuses* itembonuses) {
 				}
 			}
 		}
+	}
+
+	// Weapon procs from set bonuses: drop the ones no longer earned, (re)add the earned ones that are missing
+	for (auto it = m_set_bonus_procs.begin(); it != m_set_bonus_procs.end();) {
+		if (!wanted_procs.contains(*it)) {
+			RemoveProcFromWeapon(*it);
+			it = m_set_bonus_procs.erase(it);
+		} else {
+			++it;
+		}
+	}
+	for (const auto proc : wanted_procs) {
+		if (std::none_of(std::begin(SpellProcs), std::end(SpellProcs), [proc](const tProc &p) { return p.spellID == proc; })) {
+			AddProcToWeapon(proc, false, 100);
+		}
+		m_set_bonus_procs.insert(proc);
 	}
 }

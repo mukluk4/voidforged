@@ -2297,6 +2297,20 @@ WHERE affix = 'mana' AND class_id IN (3, 4, 5, 8, 15) AND min_value = 180 AND ma
 		.content_schema_update = true,
 	},
 
+	// Armor set bonuses can grant a spell: a worn effect, a weapon proc or a spell-cast (sympathetic) proc
+	ManifestEntry{
+		.version = 31,
+		.description = "2026_10_23_armor_set_bonus_spells",
+		.check = "SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'armor_set_bonuses' AND column_name = 'spell_type'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+ALTER TABLE `armor_set_bonuses` ADD COLUMN IF NOT EXISTS `spell_id` INT(11) NOT NULL DEFAULT 0 AFTER `affix`;
+ALTER TABLE `armor_set_bonuses` ADD COLUMN IF NOT EXISTS `spell_type` TINYINT(3) UNSIGNED NOT NULL DEFAULT 0 COMMENT '1 worn effect, 2 melee proc, 3 spell-cast (sympathetic) proc' AFTER `spell_id`;
+)",
+		.content_schema_update = true,
+	},
+
 	// Used for testing
 	//	ManifestEntry{
 	//		.version = 9229,

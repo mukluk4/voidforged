@@ -1,0 +1,144 @@
+{
+  "_doc": "Tiered rift gear (docs/dynamic_items/TIERED_GEAR.md). Read by gen_tier_gear.py together with class_sets.json (tier 1 armor themes, pieces and bonuses).",
+
+  "tiers": [
+    {"tier": 1, "prefix": "",         "mult": 1.0, "unlock": 0},
+    {"tier": 2, "prefix": "Tempered", "mult": 1.5, "unlock": 100},
+    {"tier": 3, "prefix": "Exalted",  "mult": 2.0, "unlock": 200},
+    {"tier": 4, "prefix": "Eternal",  "mult": 2.5, "unlock": 300},
+    {"tier": 5, "prefix": "Timeless", "mult": 3.0, "unlock": 400}
+  ],
+  "nonvis_unlock_offset": 25,
+  "augment_unlock_offset": 75,
+  "unlock_bucket": "rift_deepest",
+
+  "_ids": "item = item_base + (tier - 1) * tier_item_step + block + class (tier 1 armor keeps class_sets.json ids); armor set = tier * 100 + class (tier 1 = 101-116); non-visible set = 1000 + tier * 100 + class; spells from spell_id_base",
+  "item_base": 940000,
+  "tier_item_step": 5000,
+  "nonvis_set_base": 1000,
+  "spell_id_base": 50001,
+
+  "nonvis_look_shell": 900101,
+  "nonvis_pieces": [
+    {"block": 1000, "name": "Charm",   "look_item": 35001, "stat_multiplier": 0.5},
+    {"block": 1100, "name": "Earring", "look_item": 1578,  "stat_multiplier": 0.5},
+    {"block": 1200, "name": "Mask",    "look_item": 1002,  "stat_multiplier": 0.5},
+    {"block": 1300, "name": "Pendant", "look_item": 995,   "stat_multiplier": 0.6},
+    {"block": 1400, "name": "Mantle",  "look_item": 1005,  "stat_multiplier": 0.6},
+    {"block": 1500, "name": "Cloak",   "look_item": 1006,  "stat_multiplier": 0.6},
+    {"block": 1600, "name": "Girdle",  "look_item": 1007,  "stat_multiplier": 0.4},
+    {"block": 1700, "name": "Ring",    "look_item": 1454,  "stat_multiplier": 0.4}
+  ],
+
+  "_custom_spells": "Server-side rows (never shown on an item, so the client spell file is untouched). copy = an existing spell row; effects = {slot: [effect id, base value, limit value]} overrides; values scale where noted in the notes.",
+  "custom_spells": [
+    {"key": "parry_block_8", "name": "Improved Parry / Block VIII", "copy": 20515, "effects": {"1": [175, 64, 0], "2": [188, 64, 0]}},
+    {"key": "dodge_8",       "name": "Improved Dodge VIII",         "copy": 20514, "effects": {"1": [174, 80, 0]}},
+    {"key": "dodge_9",       "name": "Improved Dodge IX",           "copy": 20514, "effects": {"1": [174, 90, 0]}},
+    {"key": "cleave_10",     "name": "Cleave X",                    "copy": 20516, "effects": {"1": [169, 400, 0], "2": [169, 400, 0], "3": [169, 400, 0], "4": [169, 400, 0]}},
+    {"key": "cleave_11",     "name": "Cleave XI",                   "copy": 20516, "effects": {"1": [169, 440, 0], "2": [169, 440, 0], "3": [169, 440, 0], "4": [169, 440, 0]}},
+    {"key": "sharp_10",      "name": "Sharpshooting X",             "copy": 20518, "effects": {"1": [184, 30, 7], "2": [184, 30, 51]}},
+    {"key": "sharp_11",      "name": "Sharpshooting XI",            "copy": 20518, "effects": {"1": [184, 33, 7], "2": [184, 33, 51]}},
+    {"key": "double_9",      "name": "Double Attack Tribute IX",    "copy": 12428, "effects": {"1": [177, 24, 0]}},
+    {"key": "double_10",     "name": "Double Attack Tribute X",     "copy": 12428, "effects": {"1": [177, 27, 0]}},
+
+    {"key": "divine_1", "name": "Divine Insight I",   "copy": 5609, "effects": {"1": [274, 5, 0],  "2": [15, 4, 0]}},
+    {"key": "divine_2", "name": "Divine Insight II",  "copy": 5609, "effects": {"1": [274, 7, 0],  "2": [15, 6, 0]}},
+    {"key": "divine_3", "name": "Divine Insight III", "copy": 5609, "effects": {"1": [274, 9, 0],  "2": [15, 8, 0]}},
+    {"key": "divine_4", "name": "Divine Insight IV",  "copy": 5609, "effects": {"1": [274, 11, 0], "2": [15, 10, 0]}},
+    {"key": "divine_5", "name": "Divine Insight V",   "copy": 5609, "effects": {"1": [274, 13, 0], "2": [15, 12, 0]}},
+    {"key": "arcane_1", "name": "Arcane Insight I",   "copy": 5609, "effects": {"1": [155, 10, 0], "2": [15, 4, 0]}},
+    {"key": "arcane_2", "name": "Arcane Insight II",  "copy": 5609, "effects": {"1": [155, 15, 0], "2": [15, 6, 0]}},
+    {"key": "arcane_3", "name": "Arcane Insight III", "copy": 5609, "effects": {"1": [155, 20, 0], "2": [15, 8, 0]}},
+    {"key": "arcane_4", "name": "Arcane Insight IV",  "copy": 5609, "effects": {"1": [155, 25, 0], "2": [15, 10, 0]}},
+    {"key": "arcane_5", "name": "Arcane Insight V",   "copy": 5609, "effects": {"1": [155, 30, 0], "2": [15, 12, 0]}},
+
+    {"key": "symp_light_1", "name": "Sympathetic Healing Light I",   "copy": 24431, "effects": {"1": [383, 100, 23898]}},
+    {"key": "symp_light_2", "name": "Sympathetic Healing Light II",  "copy": 24431, "effects": {"1": [383, 100, 23899]}},
+    {"key": "symp_light_3", "name": "Sympathetic Healing Light III", "copy": 24431, "effects": {"1": [383, 100, 33276]}},
+    {"key": "symp_light_4", "name": "Sympathetic Healing Light IV",  "copy": 24431, "effects": {"1": [383, 100, 33277]}},
+    {"key": "symp_light_5", "name": "Sympathetic Healing Light V",   "copy": 24431, "effects": {"1": [383, 100, 33278]}}
+  ],
+
+  "_ladders": "Spells for gear tiers 1-5: an existing spell id, or a custom_spells key",
+  "ladders": {
+    "parry_block": [7837, 9617, 15839, 20515, "parry_block_8"],
+    "ferocity":    [9615, 15841, 20517, 21464, 21465],
+    "accuracy":    [5609, 5610, 5611, 13942, 13943],
+    "dodge":       [9612, 15838, 20514, "dodge_8", "dodge_9"],
+    "cleave":      [9614, 15840, 20516, "cleave_10", "cleave_11"],
+    "sharp":       [9616, 15842, 20518, "sharp_10", "sharp_11"],
+    "double":      [13947, 13948, 12428, "double_9", "double_10"],
+    "divine":      ["divine_1", "divine_2", "divine_3", "divine_4", "divine_5"],
+    "arcane":      ["arcane_1", "arcane_2", "arcane_3", "arcane_4", "arcane_5"],
+
+    "blessed_rune":   [23915, 23916, 23917, 23918, 23919],
+    "remote_heal":    [24338, 24339, 33321, 33322, 33323],
+    "vampiric":       [23858, 23859, 33263, 33264, 33265],
+    "prismatic":      [23738, 23739, 33233, 33234, 33235],
+    "force_magic":    [23718, 23719, 33228, 33229, 33230],
+    "venom":          [23778, 23779, 33243, 33244, 33245],
+    "burst_ice":      [23758, 23759, 33238, 33239, 33240],
+    "symp_light":     ["symp_light_1", "symp_light_2", "symp_light_3", "symp_light_4", "symp_light_5"],
+    "symp_corruption":[24417, 33351, 33352, 33353, 33354],
+    "symp_ice":       [24377, 24378, 33336, 33337, 33338],
+    "symp_magic":     [24351, 24352, 33326, 33327, 33328]
+  },
+
+  "_nonvis_bonuses": "Per class: 3 pieces = affix % lines (tier 1 value, x tier mult); 6 = worn ladder; 9 = proc ladder (proc = melee weapon proc, sympathetic = spell-cast proc)",
+  "nonvis_bonuses": {
+    "1":  {"three": {"skill_defense_pct": 4, "skill_parry_pct": 3},                          "worn": "parry_block", "proc": "blessed_rune",   "proc_type": "proc"},
+    "2":  {"three": {"heal_amount_pct": 4, "heal_crit_chance_pct": 3},                       "worn": "divine",      "proc": "symp_light",     "proc_type": "sympathetic"},
+    "3":  {"three": {"heal_amount_pct": 4, "heal_crit_chance_pct": 3},                       "worn": "parry_block", "proc": "remote_heal",    "proc_type": "proc"},
+    "4":  {"three": {"skill_archery_pct": 4, "archery_crit_chance_pct": 3},                  "worn": "sharp",       "proc": "burst_ice",      "proc_type": "proc"},
+    "5":  {"three": {"spell_disease_pct": 4, "spell_poison_pct": 4},                         "worn": "ferocity",    "proc": "vampiric",       "proc_type": "proc"},
+    "6":  {"three": {"spell_fire_pct": 4, "spell_cold_pct": 4},                              "worn": "divine",      "proc": "symp_light",     "proc_type": "sympathetic"},
+    "7":  {"three": {"flying_kick_dmg_pct": 4, "skill_h2h_pct": 3},                          "worn": "dodge",       "proc": "force_magic",    "proc_type": "proc"},
+    "8":  {"three": {"bard_stringed_pct": 4, "bard_wind_pct": 4, "bard_brass_pct": 4, "bard_percussion_pct": 4, "bard_singing_pct": 4},
+                                                                                              "worn": "accuracy",    "proc": "prismatic",      "proc_type": "proc"},
+    "9":  {"three": {"backstab_dmg_pct": 4, "skill_pierce_pct": 3},                          "worn": "cleave",      "proc": "venom",          "proc_type": "proc"},
+    "10": {"three": {"spell_cold_pct": 4, "spell_poison_pct": 4, "spell_disease_pct": 4},    "worn": "divine",      "proc": "symp_light",     "proc_type": "sympathetic"},
+    "11": {"three": {"spell_poison_pct": 4, "spell_disease_pct": 4},                         "worn": "arcane",      "proc": "symp_corruption","proc_type": "sympathetic"},
+    "12": {"three": {"spell_fire_pct": 4, "spell_cold_pct": 4},                              "worn": "arcane",      "proc": "symp_ice",       "proc_type": "sympathetic"},
+    "13": {"three": {"spell_fire_pct": 4, "spell_magic_pct": 4},                             "worn": "arcane",      "proc": "symp_magic",     "proc_type": "sympathetic"},
+    "14": {"three": {"spell_magic_pct": 4, "spell_crit_chance_pct": 3},                      "worn": "arcane",      "proc": "symp_magic",     "proc_type": "sympathetic"},
+    "15": {"three": {"skill_h2h_pct": 4, "spell_cold_pct": 3},                               "worn": "double",      "proc": "venom",          "proc_type": "proc"},
+    "16": {"three": {"frenzy_dmg_pct": 4, "skill_2hs_pct": 3, "skill_2hb_pct": 3},           "worn": "ferocity",    "proc": "burst_ice",      "proc_type": "proc"}
+  },
+
+  "_augments": "Fixed stats at tier 1 (x tier mult, rounded), all classes, No Trade, aug types 1 and 2. focus is the same at every tier: higher ranks of these families add nothing at level 70.",
+  "augment_block": 1800,
+  "augment_slots": 2097151,
+  "augments": [
+    {"name": "Bulwark Shard",  "icon": 3880, "stats": {"hp": 150, "ac": 15, "heroic_sta": 5, "mr": 10, "fr": 10, "cr": 10, "dr": 10, "pr": 10}},
+    {"name": "Ferocity Shard", "icon": 3877, "stats": {"attack": 15, "astr": 10, "adex": 10, "heroic_str": 4, "heroic_dex": 4}},
+    {"name": "Arcana Shard",   "icon": 3876, "stats": {"spelldmg": 20, "aint": 10, "mana": 150}, "focus": 6414},
+    {"name": "Mending Shard",  "icon": 2098, "stats": {"healamt": 20, "awis": 10, "mana": 150}, "focus": 6410},
+    {"name": "Alacrity Shard", "icon": 2096, "stats": {"mana": 200, "aint": 8, "awis": 8},     "focus": 6415},
+    {"name": "Valor Shard",    "icon": 2098, "stats": {"hp": 100, "attack": 10, "healamt": 10}, "focus": 13904}
+  ],
+
+  "vendors": {
+    "_doc": "Three per tier. Tier 1 armor stays the Chronal Quartermaster (class_sets.json vendor). npc ids from npc_id_base, copied from copy_npc. Positions are offsets from anchor.",
+    "copy_npc": 1200010,
+    "npc_id_base": 1200030,
+    "zone": "thevoida",
+    "_layout": "one evenly spaced line from start to end ([x, y, z]), in tier order: armor, non-visible, augments; vendors face across the line, on the side of face_hint (an EQ heading, 0-512)",
+    "start": [-89.84, -30.07, 9.01],
+    "end": [-107.79, 49.33, 9.01],
+    "face_hint": 96,
+    "_placed": "vendors placed by hand instead of on the line: \"tier:kind\" -> [x, y, z, heading]",
+    "placed": {
+      "1:armor":  [-63.93, 108.92, 4.85, 234.75],
+      "1:nonvis": [-71.55, 99.52, 4.85, 205.0],
+      "1:augments": [-53.25, 112.71, 4.85, 207.75]
+    },
+    "quartermaster_npc": 1200010,
+    "kinds": {
+      "armor":    {"name": "Armorer",   "title": "Armor",    "race": 248, "size": 6, "cost": [25, 50, 100, 200, 400]},
+      "nonvis":   {"name": "Jeweler",   "title": "Jewelry",  "race": 88,  "size": 5, "cost": [15, 30, 60, 120, 240]},
+      "augments": {"name": "Augmenter", "title": "Augments", "race": 273, "size": 6, "cost": [40, 80, 160, 320, 640]}
+    },
+    "tier1_prefix": "Chronal"
+  }
+}

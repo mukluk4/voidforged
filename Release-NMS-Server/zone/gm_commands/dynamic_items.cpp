@@ -828,7 +828,8 @@ namespace {
 				}
 			}
 
-			std::vector<uint32> thresholds, active;
+			std::vector<uint32>      thresholds, active;
+			std::vector<std::string> spell_bonuses; // active worn effects and procs, by name
 			for (const auto &b : bonuses->second) {
 				if (std::find(thresholds.begin(), thresholds.end(), b.min_pieces) == thresholds.end()) {
 					thresholds.push_back(b.min_pieces);
@@ -838,6 +839,15 @@ namespace {
 				}
 				if (std::find(active.begin(), active.end(), b.min_pieces) == active.end()) {
 					active.push_back(b.min_pieces);
+				}
+
+				if (b.spell_id) {
+					spell_bonuses.push_back(fmt::format(
+						"{} ({})",
+						spells[b.spell_id].name,
+						b.spell_type == ArmorSetSpellWorn ? "worn" : b.spell_type == ArmorSetSpellMeleeProc ? "melee proc" : "spell proc"
+					));
+					continue;
 				}
 
 				const auto affix = b.affix != EQ::AFFIX_NONE ? b.affix : SetStatAffix(b.stat_id);
@@ -865,6 +875,9 @@ namespace {
 				join(thresholds),
 				active.empty() ? DialogueWindow::ColorMessage("red", "none") : DialogueWindow::ColorMessage("green", join(active))
 			) + DialogueWindow::Break();
+			for (const auto &spell_bonus : spell_bonuses) {
+				set_lines += "&nbsp;&nbsp;" + DialogueWindow::ColorMessage("light_blue_1", spell_bonus) + DialogueWindow::Break();
+			}
 		}
 
 		if (totals.empty() && other.empty()) {
