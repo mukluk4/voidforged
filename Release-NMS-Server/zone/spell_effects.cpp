@@ -4603,7 +4603,9 @@ void Mob::BuffFadeBySlot(int slot, bool iRecalcBonuses, bool suppress, uint32 su
 		}
 	}
 
-	for (int i=0; i < EFFECT_COUNT; i++)
+	// A suppressed buff (SPELL_SUPPRESSED, not a real spell id) had its effects removed when it was suppressed;
+	// reading spells[] with it here crashed the zone when the suppression wore off
+	for (int i=0; IsValidSpell(buffs[slot].spellid) && i < EFFECT_COUNT; i++)
 	{
 		if(IsBlankSpellEffect(buffs[slot].spellid, i))
 			continue;

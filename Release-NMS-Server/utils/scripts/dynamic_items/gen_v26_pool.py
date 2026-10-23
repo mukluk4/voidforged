@@ -67,7 +67,7 @@ CLASSES = {
 		 d('skill_block_pct'), d('skill_dodge_pct'), d('skill_parry_pct'), d('skill_riposte_pct'),
 		 s('spell_cold_pct'), s('spell_poison_pct'), s('heal_amount_pct')]),
 	16: ('Berserker', HP_MELEE, 'chain', None, POOL_FULL, (H, H, M, M, L, L),
-		[w('skill_2hs_pct'), w('skill_2hb_pct'), w('skill_1hs_pct'), w('skill_1hb_pct'),
+		[w('skill_2hs_pct'), w('skill_2hb_pct'),  # no 1H: Berserkers can't use one-handed weapons
 		 d('skill_defense_pct'), d('skill_parry_pct'), d('skill_riposte_pct'), d('skill_dodge_pct'),
 		 ('frenzy_skill_pct', ABIL_SKILL, 150), ('frenzy_dmg_pct', ABIL_DMG, 250)]),
 }

@@ -276,6 +276,7 @@ public:
 	Client(); // mocking / testing
 	~Client();
 	void CheckArmorSetBonuses(StatBonuses* itembonuses);
+	std::unordered_map<uint32, uint32> CountEquippedArmorSetPieces(); // set id -> pieces worn that count for this character
 	std::unordered_map<uint32, uint32> m_active_armor_set_tiers;
 	EQ::DynamicItemBonuses dynamic_item_bonuses;
 	void ReconnectUCS();
@@ -1047,6 +1048,8 @@ public:
 	inline uint16 MaxSkill(EQ::skills::SkillType skill_id) const { return MaxSkill(skill_id, GetClass(), GetLevel()); }
 	uint8 GetSkillTrainLevel(EQ::skills::SkillType skill_id, uint8 class_id);
 	void MaxSkills();
+	uint16 GetHighestClassSkillCap(EQ::skills::SkillType skill, uint8 level);
+	void AutoLearnForLevel(); // Custom:AutoTrainSkills / AutoScribeSpells / AutoLearnDisciplines
 
 	void SendTradeskillSearchResults(const std::string &query, unsigned long objtype, unsigned long someid);
 	void SendTradeskillDetails(uint32 recipe_id);

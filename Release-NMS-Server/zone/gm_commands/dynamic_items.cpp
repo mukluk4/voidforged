@@ -5,6 +5,7 @@
 #include "../../common/say_link.h"
 
 #include <algorithm>
+#include <map>
 
 namespace {
 	// Every slot a player can be carrying a dynamic item in, except the bank
@@ -290,6 +291,17 @@ namespace {
 		return name;
 	}
 
+	void SendPagedTable(
+		Client *c,
+		const std::string &title,
+		const std::string &top,
+		const std::string &header,
+		const std::vector<std::string> &rows,
+		const std::string &bottom,
+		int page,
+		const std::string &page_command
+	);
+
 	// One item's stats as a table, or a second item compared against it column by column. The popup holds
 	// 4,095 characters (OnLevelMessage_Struct; longer text is dropped by the client), so a long table is split
 	// into pages: page_command + " <page>" re-sends this view at that page (a clickable link in chat).
@@ -377,6 +389,22 @@ namespace {
 		}
 		bottom += "* = random affix";
 
+		SendPagedTable(c, title, top, header, rows, bottom, page, page_command);
+	}
+
+	// A table popup split into pages that fit (top and bottom repeat on every page). page_command + " <page>"
+	// re-sends the view at that page, offered as clickable links in chat.
+	void SendPagedTable(
+		Client *c,
+		const std::string &title,
+		const std::string &top,
+		const std::string &header,
+		const std::vector<std::string> &rows,
+		const std::string &bottom,
+		int page,
+		const std::string &page_command
+	)
+	{
 		// Split the rows into pages that fit, leaving room for the page line
 		constexpr size_t popup_limit = 4095;
 		const std::string page_line_room = DialogueWindow::Break() + "Page 99 of 99";
@@ -509,7 +537,7 @@ namespace {
 			text += "Too many items to list; use #dyninfo [slot]." + DialogueWindow::Break();
 		}
 
-		text += "Click an item number in chat (or #dyninfo [#]) to compare it with what you're wearing. #dyninfo compare [#] [#] for any two.";
+		text += "Click an item number in chat (or #dyninfo [#]) to compare it with what you're wearing. #dyninfo compare [#] [#] for any two. #dyninfo worn for your totals.";
 		c->SendPopupToClient("Dynamic Items", text.c_str());
 		SendDynInfoLinks(c, entries);
 	}
@@ -606,11 +634,308 @@ namespace {
 
 		SendDynInfoTable(c, *worn, e, fmt::format("Compare #{} with worn #{}", number, worn->number), page, fmt::format("#dyninfo {}", number));
 	}
+
+	// armor_set_bonuses.stat_id (see Client::CheckArmorSetBonuses) as the matching affix, where there is one
+	EQ::eDynamicAffixID SetStatAffix(int32 stat_id)
+	{
+		switch (stat_id) {
+			case 1: return EQ::AFFIX_HP;
+			case 2: return EQ::AFFIX_MANA;
+			case 3: return EQ::AFFIX_AC;
+			case 4: return EQ::AFFIX_ATTACK;
+			case 5: return EQ::AFFIX_MANA_REGEN;
+			case 6: return EQ::AFFIX_HP_REGEN;
+			case 8: return EQ::AFFIX_DAMAGE_SHIELD;
+			case 20: return EQ::AFFIX_STR;
+			case 21: return EQ::AFFIX_STA;
+			case 22: return EQ::AFFIX_DEX;
+			case 23: return EQ::AFFIX_AGI;
+			case 24: return EQ::AFFIX_WIS;
+			case 25: return EQ::AFFIX_INT;
+			case 26: return EQ::AFFIX_CHA;
+			case 30: return EQ::AFFIX_HEROIC_STR;
+			case 31: return EQ::AFFIX_HEROIC_STA;
+			case 32: return EQ::AFFIX_HEROIC_DEX;
+			case 33: return EQ::AFFIX_HEROIC_AGI;
+			case 34: return EQ::AFFIX_HEROIC_WIS;
+			case 35: return EQ::AFFIX_HEROIC_INT;
+			case 60: return EQ::AFFIX_MAGIC_RESIST;
+			case 61: return EQ::AFFIX_FIRE_RESIST;
+			case 62: return EQ::AFFIX_COLD_RESIST;
+			case 63: return EQ::AFFIX_POISON_RESIST;
+			case 64: return EQ::AFFIX_DISEASE_RESIST;
+			default: return EQ::AFFIX_NONE;
+		}
+	}
+
+	// Set bonus stat_ids with no affix of their own
+	const char *SetStatLabel(int32 stat_id)
+	{
+		switch (stat_id) {
+			case 7: return "Haste %";
+			case 36: return "Heroic Charisma";
+			case 85: return "Archery Skill Mod %";
+			case 86: return "Backstab Skill Mod %";
+			case 87: return "Flying Kick Skill Mod %";
+			case 88: return "Frenzy Skill Mod %";
+			default: return nullptr;
+		}
+	}
+
+	// One row of #dyninfo worn: what dynamic rolls, other items (and every augment) and set bonuses give
+	struct WornTotals {
+		int32 dynamic = 0;
+		int32 items   = 0;
+		int32 sets    = 0;
+	};
+
+	// An item's stats as the affixes they match (the same fields Mob::AddItemBonuses reads)
+	void AddItemStats(const EQ::ItemData *item, std::map<EQ::eDynamicAffixID, WornTotals> &totals, std::map<std::string, WornTotals> &other)
+	{
+		const std::pair<EQ::eDynamicAffixID, int32> stats[] = {
+			{ EQ::AFFIX_HP, item->HP },
+			{ EQ::AFFIX_MANA, item->Mana },
+			{ EQ::AFFIX_ENDURANCE, item->Endur },
+			{ EQ::AFFIX_AC, item->AC },
+			{ EQ::AFFIX_STR, item->AStr },
+			{ EQ::AFFIX_STA, item->ASta },
+			{ EQ::AFFIX_DEX, item->ADex },
+			{ EQ::AFFIX_AGI, item->AAgi },
+			{ EQ::AFFIX_INT, item->AInt },
+			{ EQ::AFFIX_WIS, item->AWis },
+			{ EQ::AFFIX_CHA, item->ACha },
+			{ EQ::AFFIX_HEROIC_STR, item->HeroicStr },
+			{ EQ::AFFIX_HEROIC_STA, item->HeroicSta },
+			{ EQ::AFFIX_HEROIC_DEX, item->HeroicDex },
+			{ EQ::AFFIX_HEROIC_AGI, item->HeroicAgi },
+			{ EQ::AFFIX_HEROIC_INT, item->HeroicInt },
+			{ EQ::AFFIX_HEROIC_WIS, item->HeroicWis },
+			{ EQ::AFFIX_MAGIC_RESIST, item->MR },
+			{ EQ::AFFIX_FIRE_RESIST, item->FR },
+			{ EQ::AFFIX_COLD_RESIST, item->CR },
+			{ EQ::AFFIX_DISEASE_RESIST, item->DR },
+			{ EQ::AFFIX_POISON_RESIST, item->PR },
+			{ EQ::AFFIX_CORRUPTION_RESIST, item->SVCorruption },
+			{ EQ::AFFIX_HEROIC_MAGIC_RESIST, item->HeroicMR },
+			{ EQ::AFFIX_HEROIC_FIRE_RESIST, item->HeroicFR },
+			{ EQ::AFFIX_HEROIC_COLD_RESIST, item->HeroicCR },
+			{ EQ::AFFIX_HEROIC_DISEASE_RESIST, item->HeroicDR },
+			{ EQ::AFFIX_HEROIC_POISON_RESIST, item->HeroicPR },
+			{ EQ::AFFIX_HEROIC_CORRUPTION_RESIST, item->HeroicSVCorrup },
+			{ EQ::AFFIX_SPELL_DAMAGE, item->SpellDmg },
+			{ EQ::AFFIX_HEAL_AMOUNT, item->HealAmt },
+			{ EQ::AFFIX_ATTACK, item->Attack },
+			{ EQ::AFFIX_HP_REGEN, item->Regen },
+			{ EQ::AFFIX_MANA_REGEN, item->ManaRegen },
+			{ EQ::AFFIX_ENDURANCE_REGEN, item->EnduranceRegen },
+			{ EQ::AFFIX_COMBAT_EFFECTS, item->CombatEffects },
+			{ EQ::AFFIX_SPELL_SHIELD, item->SpellShield },
+			{ EQ::AFFIX_SHIELDING, item->Shielding },
+			{ EQ::AFFIX_DAMAGE_SHIELD, item->DamageShield },
+			{ EQ::AFFIX_DOT_SHIELDING, item->DotShielding },
+			{ EQ::AFFIX_DS_MITIGATION, item->DSMitigation },
+			{ EQ::AFFIX_AVOIDANCE, item->Avoidance },
+			{ EQ::AFFIX_ACCURACY, item->Accuracy },
+			{ EQ::AFFIX_STUN_RESIST, item->StunResist },
+			{ EQ::AFFIX_STRIKE_THROUGH, item->StrikeThrough },
+		};
+		for (const auto &[affix, value] : stats) {
+			if (value) {
+				totals[affix].items += value;
+			}
+		}
+
+		if (item->HeroicCha) {
+			other["Heroic Charisma"].items += item->HeroicCha;
+		}
+
+		// Item haste doesn't add up: the best one counts
+		if (item->Haste) {
+			auto &haste = other["Haste %"].items;
+			haste = std::max<int32>(haste, item->Haste);
+		}
+	}
+
+	// Totals of everything the character's worn gear gives: dynamic item rolls, other items and every
+	// augment (including those in dynamic items), and active armor set bonuses
+	void SendDynInfoWorn(Client *c, const std::vector<DynInfoEntry> &entries, int page = 1)
+	{
+		std::map<EQ::eDynamicAffixID, WornTotals> totals;
+		std::map<std::string, WornTotals>         other; // stats with no affix
+		int                                       dynamic_worn = 0, items_worn = 0, augs_worn = 0;
+
+		for (const auto &e : entries) {
+			if (!e.equipped) {
+				continue;
+			}
+			dynamic_worn++;
+			for (const auto &line : e.rolls) {
+				totals[line.affix].dynamic += line.value;
+			}
+		}
+
+		// Same slots and checks as Mob::CalcItemBonuses / AddItemBonuses (ammo gives nothing)
+		auto mgr    = DynamicItemsManager::Instance();
+		auto counts = [&](const EQ::ItemInstance *inst) {
+			return inst && inst->IsClassCommon() && inst->GetItem() &&
+				inst->IsEquipable(c->GetBaseRace(), c->GetClassesBits()) &&
+				c->GetLevel() >= inst->GetItemRequiredLevel(true);
+		};
+		for (int16 s = EQ::invslot::BONUS_BEGIN; s <= EQ::invslot::BONUS_SKILL_END; ++s) {
+			const auto inst = c->GetInv().GetItem(s);
+			if (s == EQ::invslot::slotAmmo || !counts(inst)) {
+				continue;
+			}
+
+			// Dynamic items' own stats are their rolls, counted above
+			if (!mgr->IsDynamicItem(inst->GetID())) {
+				AddItemStats(inst->GetItem(), totals, other);
+				items_worn++;
+			}
+
+			for (int a = EQ::invaug::SOCKET_BEGIN; a <= EQ::invaug::SOCKET_END; ++a) {
+				const auto aug = inst->GetAugment(a);
+				if (aug && aug->GetAugmentType() && aug->GetItem()) {
+					AddItemStats(aug->GetItem(), totals, other);
+					augs_worn++;
+				}
+			}
+		}
+
+		// Same piece counting and bonus rules as Client::CheckArmorSetBonuses
+		const uint32 class_bits = c->GetClassesBits();
+		std::string  set_lines;
+		for (const auto &[set_id, pieces] : c->CountEquippedArmorSetPieces()) {
+			const auto bonuses = g_armor_set_bonuses_map.find(set_id);
+			if (bonuses == g_armor_set_bonuses_map.end()) {
+				continue;
+			}
+
+			// Name the set after a worn piece ("Bladesinger's Regalia Helm" -> "Bladesinger's Regalia")
+			std::string name = fmt::format("Set {}", set_id);
+			for (int16 s = EQ::invslot::EQUIPMENT_BEGIN; s <= EQ::invslot::EQUIPMENT_END; ++s) {
+				const auto inst = c->GetInv().GetItem(s);
+				const auto it   = inst ? g_armor_set_item_map.find(inst->GetID()) : g_armor_set_item_map.end();
+				const auto base = it != g_armor_set_item_map.end() && it->second.set_id == set_id
+					? database.GetItem(inst->GetID()) // the item row's name, without a dynamic roll suffix
+					: nullptr;
+				if (base) {
+					name = base->Name;
+					if (const auto space = name.rfind(' '); space != std::string::npos) {
+						name.resize(space);
+					}
+					break;
+				}
+			}
+
+			std::vector<uint32> thresholds, active;
+			for (const auto &b : bonuses->second) {
+				if (std::find(thresholds.begin(), thresholds.end(), b.min_pieces) == thresholds.end()) {
+					thresholds.push_back(b.min_pieces);
+				}
+				if (pieces < b.min_pieces || (b.class_mask && !(b.class_mask & class_bits))) {
+					continue;
+				}
+				if (std::find(active.begin(), active.end(), b.min_pieces) == active.end()) {
+					active.push_back(b.min_pieces);
+				}
+
+				const auto affix = b.affix != EQ::AFFIX_NONE ? b.affix : SetStatAffix(b.stat_id);
+				if (affix != EQ::AFFIX_NONE) {
+					totals[affix].sets += b.stat_value;
+				} else if (const auto label = SetStatLabel(b.stat_id)) {
+					other[label].sets += b.stat_value;
+				}
+			}
+			std::sort(thresholds.begin(), thresholds.end());
+			std::sort(active.begin(), active.end());
+
+			auto join = [](const std::vector<uint32> &v) {
+				std::vector<std::string> s;
+				for (const auto n : v) {
+					s.push_back(std::to_string(n));
+				}
+				return s.empty() ? std::string("none") : Strings::Join(s, "/");
+			};
+
+			set_lines += fmt::format(
+				"{} - {} worn, bonuses at {}, active: {}",
+				DialogueWindow::ColorMessage("white", name),
+				pieces,
+				join(thresholds),
+				active.empty() ? DialogueWindow::ColorMessage("red", "none") : DialogueWindow::ColorMessage("green", join(active))
+			) + DialogueWindow::Break();
+		}
+
+		if (totals.empty() && other.empty()) {
+			c->Message(Chat::White, "Your worn gear doesn't give any stats.");
+			return;
+		}
+
+		auto cell = [](int32 value, const char *unit) {
+			return DialogueWindow::TableCell(value ? fmt::format("{}{}", value, unit) : "-");
+		};
+		auto row = [&](const std::string &name, const WornTotals &v, bool is_pct) {
+			const auto unit = is_pct ? "%" : "";
+			return DialogueWindow::TableRow(
+				DialogueWindow::TableCell(name) + cell(v.dynamic, unit) + cell(v.items, unit) + cell(v.sets, unit) +
+				DialogueWindow::TableCell(DialogueWindow::ColorMessage("gold", fmt::format("{}{}", v.dynamic + v.items + v.sets, unit)))
+			);
+		};
+
+		std::vector<std::string> rows;
+		for (const auto &[affix, v] : totals) {
+			bool       is_pct = false;
+			const auto name   = TableLabel(affix, is_pct);
+			rows.push_back(row(name, v, is_pct));
+
+			// Heroic Charisma has no affix of its own: list it with the other heroics
+			if (affix == EQ::AFFIX_HEROIC_WIS && other.contains("Heroic Charisma")) {
+				rows.push_back(row("Heroic Charisma", other["Heroic Charisma"], false));
+			}
+		}
+		const bool heroic_cha_listed = totals.contains(EQ::AFFIX_HEROIC_WIS);
+		for (const auto &[label, v] : other) {
+			if (label == "Heroic Charisma" && heroic_cha_listed) {
+				continue;
+			}
+			std::string name   = label;
+			const bool  is_pct = name.ends_with(" %");
+			if (is_pct) {
+				name.resize(name.size() - 2);
+			}
+			rows.push_back(row(name, v, is_pct));
+		}
+
+		const std::string top = DialogueWindow::ColorMessage(
+			"gold",
+			fmt::format(
+				"{} dynamic, {} other item{}, {} augment{} worn",
+				dynamic_worn,
+				items_worn,
+				items_worn == 1 ? "" : "s",
+				augs_worn,
+				augs_worn == 1 ? "" : "s"
+			)
+		) + DialogueWindow::Break() + set_lines;
+		const std::string header = DialogueWindow::TableCell("Stat") + DialogueWindow::TableCell("Dynamic") +
+			DialogueWindow::TableCell("Items") + DialogueWindow::TableCell("Sets") + DialogueWindow::TableCell("Total");
+		const std::string bottom = "Items = other worn items and all augments. Gear only, not buffs or AAs; stat caps still apply in game.";
+
+		SendPagedTable(c, "Worn Totals", top, header, rows, bottom, page, "#dyninfo worn");
+	}
 }
 
 void command_dyninfo(Client *c, const Seperator *sep)
 {
 	const auto entries = GatherDynamicItems(c);
+
+	// Before the empty check: set pieces that aren't dynamic items still have bonuses to total
+	if (sep->argnum >= 1 && !strcasecmp(sep->arg[1], "worn")) {
+		SendDynInfoWorn(c, entries, sep->IsNumber(2) ? Strings::ToInt(sep->arg[2]) : 1);
+		return;
+	}
+
 	if (entries.empty()) {
 		c->Message(Chat::White, "You don't have any dynamic items.");
 		return;
@@ -654,7 +979,7 @@ void command_dyninfo(Client *c, const Seperator *sep)
 	}
 
 	if (group < 0) {
-		c->Message(Chat::White, "Usage: #dyninfo - overview | #dyninfo [#] [page] - compare with worn | #dyninfo [slot] - e.g. feet | #dyninfo compare [#] [#] [page]");
+		c->Message(Chat::White, "Usage: #dyninfo - overview | #dyninfo [#] [page] - compare with worn | #dyninfo [slot] - e.g. feet | #dyninfo compare [#] [#] [page] | #dyninfo worn [page] - totals of everything worn");
 		return;
 	}
 

@@ -1058,6 +1058,7 @@ void Client::CompleteConnect()
 
 	RecordStats();
 	AutoGrantAAPoints();
+	AutoLearnForLevel(); // catches up characters from before it was on, or a rule change
 	SendAlternateAdvancementTable();
 
 	if (RuleB(Custom, ServerAuthStats)) {
@@ -14216,7 +14217,7 @@ void Client::Handle_OP_ShopPlayerSell(const EQApplicationPacket *app)
 
 	// NMS: glamours carry a purchase price for the glamour vendors but have no resale value; the Purveyor
 	// of Glamour also hands them out for Echoes of Memory, so buying them back would mint platinum
-	if (Strings::BeginsWith(item->Name, "Glamour - ")) {
+	if (RuleB(Custom, BlockGlamourResale) && Strings::BeginsWith(item->Name, "Glamour - ")) {
 		Message(Chat::MerchantExchange, "%s tells you, 'I have no use for glamours.'", vendor->GetCleanName());
 		return;
 	}

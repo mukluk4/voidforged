@@ -373,6 +373,7 @@ Compares your dynamic items, including ones in the bank and shared bank. Every i
 | `#dyninfo <#>` | A table comparing that item with what you're wearing in its slot: **Stat / Worn / This item / Change**, gains in green, losses in red, `-` where an item lacks the stat. Clicking a number in chat does the same. |
 | `#dyninfo <slot>` | Full side-by-side for one slot (e.g. `feet`, `finger`, `weapon`, `ear`, `wrist`): your equipped item, then every spare with each line's difference in green or red, and "(new)" / "(lost)" for affixes |
 | `#dyninfo compare <#> <#>` | The same table for any two items, differences relative to the first |
+| `#dyninfo worn` | Totals of everything your worn gear gives, as **Stat / Dynamic / Items / Sets / Total**: Dynamic = rolls on worn dynamic items, Items = other worn items plus every augment (including augments in dynamic items), Sets = active armor set bonuses, with a line per set (pieces worn, bonus thresholds, which are active). Only items you can use and meet the required level for count, and ammo gives nothing, the same as in game. Item haste shows the best one, as it works in game. Buffs and AAs aren't included, and stat caps still apply in game. |
 
 A table too long for one window (the client's popup holds about 4,000 characters, roughly 35-40 stat
 lines in a comparison) is split into pages: the title shows "(1/2)", and chat gets clickable

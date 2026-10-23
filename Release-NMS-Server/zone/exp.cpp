@@ -1415,7 +1415,12 @@ void Client::SetLevel(uint8 set_level, bool command)
 		}
 	}
 
+	const bool leveled_up = set_level > m_pp.level;
 	m_pp.level = set_level;
+
+	if (leveled_up) {
+		AutoLearnForLevel();
+	}
 
 	if (command) {
 		m_pp.exp = GetEXPForLevel(set_level);

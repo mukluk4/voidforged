@@ -1,0 +1,665 @@
+{
+  "shell_item": 900101,
+  "item_id_base": 900000,
+  "set_id_base": 100,
+  "pieces": [
+    {
+      "block": 300,
+      "name": "Helm",
+      "look_item": 1001,
+      "stat_multiplier": 1.0
+    },
+    {
+      "block": 400,
+      "name": "Chestguard",
+      "look_item": 1004,
+      "stat_multiplier": 1.25
+    },
+    {
+      "block": 600,
+      "name": "Sleeves",
+      "look_item": 1008,
+      "stat_multiplier": 0.9
+    },
+    {
+      "block": 700,
+      "name": "Bracer",
+      "look_item": 1009,
+      "stat_multiplier": 0.8
+    },
+    {
+      "block": 800,
+      "name": "Gloves",
+      "look_item": 1010,
+      "stat_multiplier": 0.9
+    },
+    {
+      "block": 900,
+      "name": "Leggings",
+      "look_item": 1011,
+      "stat_multiplier": 1.15
+    },
+    {
+      "block": 200,
+      "name": "Boots",
+      "look_item": 1012,
+      "stat_multiplier": 1.0
+    }
+  ],
+  "classes": {
+    "1": "Juggernaut",
+    "2": "Divine Conduit",
+    "3": "Bulwark",
+    "4": "Wildstalker",
+    "5": "Dread Harbinger",
+    "6": "Verdant Storm",
+    "7": "Iron Fist",
+    "8": "Maestro",
+    "9": "Shadowblade",
+    "10": "Spiritcaller",
+    "11": "Lich Lord",
+    "12": "Archmage",
+    "13": "Elementalist",
+    "14": "Mesmerist",
+    "15": "Feral Bond",
+    "16": "Bloodrage"
+  },
+  "affixes": {
+    "min": 2,
+    "max": 3
+  },
+  "vendor": {
+    "merchant_id": 1200010,
+    "cost": 25,
+    "first_slot": 1
+  },
+  "bonuses": {
+    "1": [
+      {
+        "pieces": 2,
+        "value": 250,
+        "affix": "hp"
+      },
+      {
+        "pieces": 2,
+        "value": 15,
+        "affix": "ac"
+      },
+      {
+        "pieces": 4,
+        "value": 40,
+        "affix": "ac"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "hp_regen"
+      },
+      {
+        "pieces": 8,
+        "value": 750,
+        "affix": "hp"
+      },
+      {
+        "pieces": 8,
+        "value": 5,
+        "affix": "shielding"
+      },
+      {
+        "pieces": 8,
+        "value": 10,
+        "affix": "stun_resist"
+      }
+    ],
+    "2": [
+      {
+        "pieces": 2,
+        "value": 5,
+        "affix": "mana_regen"
+      },
+      {
+        "pieces": 2,
+        "value": 250,
+        "affix": "mana"
+      },
+      {
+        "pieces": 4,
+        "value": 30,
+        "affix": "wis"
+      },
+      {
+        "pieces": 4,
+        "value": 8,
+        "affix": "heal_amount_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 10,
+        "affix": "mana_regen"
+      },
+      {
+        "pieces": 8,
+        "value": 5,
+        "affix": "heal_crit_chance_pct"
+      }
+    ],
+    "3": [
+      {
+        "pieces": 2,
+        "value": 150,
+        "affix": "mana"
+      },
+      {
+        "pieces": 2,
+        "value": 200,
+        "affix": "hp"
+      },
+      {
+        "pieces": 4,
+        "value": 30,
+        "affix": "ac"
+      },
+      {
+        "pieces": 4,
+        "value": 5,
+        "affix": "heal_amount_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 500,
+        "affix": "hp"
+      },
+      {
+        "pieces": 8,
+        "value": 3,
+        "affix": "shielding"
+      },
+      {
+        "pieces": 8,
+        "value": 10,
+        "affix": "stun_resist"
+      }
+    ],
+    "4": [
+      {
+        "pieces": 2,
+        "value": 25,
+        "affix": "attack"
+      },
+      {
+        "pieces": 2,
+        "value": 20,
+        "affix": "dex"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "skill_archery_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 15,
+        "stat_id": 7
+      },
+      {
+        "pieces": 8,
+        "value": 4,
+        "affix": "archery_crit_chance_pct"
+      }
+    ],
+    "5": [
+      {
+        "pieces": 2,
+        "value": 250,
+        "affix": "hp"
+      },
+      {
+        "pieces": 2,
+        "value": 150,
+        "affix": "mana"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "spell_disease_pct"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "spell_poison_pct"
+      },
+      {
+        "pieces": 4,
+        "value": 30,
+        "affix": "ac"
+      },
+      {
+        "pieces": 8,
+        "value": 500,
+        "affix": "hp"
+      },
+      {
+        "pieces": 8,
+        "value": 5,
+        "affix": "dot_crit_chance_pct"
+      }
+    ],
+    "6": [
+      {
+        "pieces": 2,
+        "value": 250,
+        "affix": "mana"
+      },
+      {
+        "pieces": 2,
+        "value": 5,
+        "affix": "mana_regen"
+      },
+      {
+        "pieces": 4,
+        "value": 5,
+        "affix": "heal_amount_pct"
+      },
+      {
+        "pieces": 4,
+        "value": 8,
+        "affix": "spell_cold_pct"
+      },
+      {
+        "pieces": 4,
+        "value": 8,
+        "affix": "spell_fire_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 25,
+        "affix": "damage_shield"
+      },
+      {
+        "pieces": 8,
+        "value": 5,
+        "affix": "dot_crit_chance_pct"
+      }
+    ],
+    "7": [
+      {
+        "pieces": 2,
+        "value": 20,
+        "affix": "agi"
+      },
+      {
+        "pieces": 2,
+        "value": 25,
+        "affix": "attack"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "flying_kick_skill_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 5,
+        "affix": "avoidance"
+      },
+      {
+        "pieces": 8,
+        "value": 3,
+        "affix": "melee_crit_chance_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 15,
+        "stat_id": 7
+      }
+    ],
+    "8": [
+      {
+        "pieces": 2,
+        "value": 25,
+        "affix": "cha"
+      },
+      {
+        "pieces": 2,
+        "value": 150,
+        "affix": "mana"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "bard_singing_pct"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "bard_percussion_pct"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "bard_brass_pct"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "bard_wind_pct"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "bard_stringed_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 500,
+        "affix": "hp"
+      },
+      {
+        "pieces": 8,
+        "value": 15,
+        "stat_id": 7
+      },
+      {
+        "pieces": 8,
+        "value": 5,
+        "affix": "end_regen"
+      }
+    ],
+    "9": [
+      {
+        "pieces": 2,
+        "value": 25,
+        "affix": "attack"
+      },
+      {
+        "pieces": 2,
+        "value": 20,
+        "affix": "dex"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "backstab_skill_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 15,
+        "stat_id": 7
+      },
+      {
+        "pieces": 8,
+        "value": 4,
+        "affix": "melee_crit_chance_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 10,
+        "affix": "backstab_dmg_pct"
+      }
+    ],
+    "10": [
+      {
+        "pieces": 2,
+        "value": 200,
+        "affix": "hp"
+      },
+      {
+        "pieces": 2,
+        "value": 250,
+        "affix": "mana"
+      },
+      {
+        "pieces": 4,
+        "value": 20,
+        "affix": "sta"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "spell_cold_pct"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "spell_poison_pct"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "spell_disease_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 5,
+        "affix": "dot_crit_chance_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 5,
+        "affix": "heal_amount_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 10,
+        "affix": "mana_regen"
+      }
+    ],
+    "11": [
+      {
+        "pieces": 2,
+        "value": 300,
+        "affix": "mana"
+      },
+      {
+        "pieces": 2,
+        "value": 5,
+        "affix": "mana_regen"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "spell_poison_pct"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "spell_disease_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 10,
+        "affix": "dot_crit_dmg_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 5,
+        "affix": "dot_crit_chance_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 10,
+        "affix": "mana_regen"
+      }
+    ],
+    "12": [
+      {
+        "pieces": 2,
+        "value": 300,
+        "affix": "mana"
+      },
+      {
+        "pieces": 2,
+        "value": 30,
+        "affix": "int"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "spell_fire_pct"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "spell_cold_pct"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "spell_magic_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 15,
+        "affix": "spell_crit_dmg_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 5,
+        "affix": "spell_crit_chance_pct"
+      }
+    ],
+    "13": [
+      {
+        "pieces": 2,
+        "value": 300,
+        "affix": "mana"
+      },
+      {
+        "pieces": 2,
+        "value": 20,
+        "affix": "sta"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "spell_fire_pct"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "spell_magic_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 5,
+        "affix": "spell_crit_chance_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 25,
+        "affix": "damage_shield"
+      }
+    ],
+    "14": [
+      {
+        "pieces": 2,
+        "value": 25,
+        "affix": "cha"
+      },
+      {
+        "pieces": 2,
+        "value": 300,
+        "affix": "mana"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "mana_regen"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "spell_magic_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 5,
+        "affix": "spell_shield"
+      },
+      {
+        "pieces": 8,
+        "value": 5,
+        "affix": "spell_crit_chance_pct"
+      }
+    ],
+    "15": [
+      {
+        "pieces": 2,
+        "value": 150,
+        "affix": "mana"
+      },
+      {
+        "pieces": 2,
+        "value": 20,
+        "affix": "agi"
+      },
+      {
+        "pieces": 2,
+        "value": 20,
+        "affix": "str"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "skill_h2h_pct"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "spell_cold_pct"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "spell_poison_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 15,
+        "stat_id": 7
+      },
+      {
+        "pieces": 8,
+        "value": 3,
+        "affix": "melee_crit_chance_pct"
+      }
+    ],
+    "16": [
+      {
+        "pieces": 2,
+        "value": 25,
+        "affix": "str"
+      },
+      {
+        "pieces": 2,
+        "value": 250,
+        "affix": "hp"
+      },
+      {
+        "pieces": 4,
+        "value": 10,
+        "affix": "frenzy_skill_pct"
+      },
+      {
+        "pieces": 4,
+        "value": 30,
+        "affix": "attack"
+      },
+      {
+        "pieces": 8,
+        "value": 20,
+        "stat_id": 7
+      },
+      {
+        "pieces": 8,
+        "value": 5,
+        "affix": "melee_crit_chance_pct"
+      },
+      {
+        "pieces": 8,
+        "value": 15,
+        "affix": "melee_crit_dmg_pct"
+      }
+    ]
+  }
+}

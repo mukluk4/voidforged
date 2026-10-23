@@ -13751,35 +13751,71 @@ std::string Client::GetGuildPublicNote()
 	return gci.public_note;
 }
 
+// Highest cap for a skill at a level among the character's classes (all of them when multiclassing)
+uint16 Client::GetHighestClassSkillCap(EQ::skills::SkillType skill, uint8 level)
+{
+	const uint32 classes_bits = RuleB(Custom, MulticlassingEnabled) ? GetClassesBits() : (1u << (GetClass() - 1));
+
+	uint16 cap = 0;
+	for (uint8 class_id = 1; class_id <= Class::PLAYER_CLASS_COUNT; ++class_id) {
+		if (classes_bits & (1u << (class_id - 1))) {
+			cap = std::max<uint16>(cap, SkillCaps::Instance()->GetSkillCap(class_id, skill, level).cap);
+		}
+	}
+
+	return cap;
+}
+
 void Client::MaxSkills()
 {
-    for (const auto &s : EQ::skills::GetSkillTypeMap()) {
-        uint16 highestSkillCap = 0;
+	for (const auto &s : EQ::skills::GetSkillTypeMap()) {
+		const uint16 cap = EQ::skills::IsSpecializedSkill(s.first) ?
+			MAX_SPECIALIZED_SKILL :
+			GetHighestClassSkillCap(s.first, RuleI(Character, MaxLevel));
 
-        if (RuleB(Custom, MulticlassingEnabled)) {
-            unsigned int classes_bits = GetClassesBits();
+		if (GetRawSkill(s.first) < cap) {
+			SetSkill(s.first, cap);
+		}
+	}
+}
 
-            // Loop through each bit in classes_bits
-            for (int i = 0; i < sizeof(classes_bits) * 8; ++i) {
-                // Check if the ith bit is set
-                if (classes_bits & (1 << i)) {
-                    // Compute the class ID from the bit position
-                    uint16 classID = i + 1;
+// Level-up and login: skills (not tradeskills) to their caps for the current level, plus every spell and
+// discipline the character's classes have up to it. Only raises / adds, so it's quiet once caught up.
+void Client::AutoLearnForLevel()
+{
+	const uint8 level = GetLevel();
 
-                    uint16 classSkillCap = (
-                        EQ::skills::IsSpecializedSkill(s.first) ?
-						MAX_SPECIALIZED_SKILL :
-						SkillCaps::Instance()->GetSkillCap(classID, s.first, RuleI(Character, MaxLevel)).cap
-					);
-				}
+	if (RuleB(Custom, AutoTrainSkills)) {
+		int trained = 0;
+		for (const auto &s : EQ::skills::GetSkillTypeMap()) {
+			if (EQ::skills::IsTradeskill(s.first)) {
+				continue;
+			}
+
+			uint16 cap = GetHighestClassSkillCap(s.first, level);
+			if (EQ::skills::IsSpecializedSkill(s.first)) {
+				// What a guildmaster would train; going past it is still earned by casting
+				cap = std::min<uint16>(cap, RuleI(Skills, MaxTrainSpecializations));
+			}
+
+			if (GetRawSkill(s.first) < cap) {
+				SetSkill(s.first, cap);
+				trained++;
 			}
 		}
 
-		// Set skill to the highest cap found across all classes
-		if (GetSkill(s.first) < highestSkillCap) {
-			SetSkill(s.first, highestSkillCap);
+		if (trained) {
+			Message(Chat::White, fmt::format("Your skills have been trained to their limits for level {}.", level).c_str());
 		}
-    }
+	}
+
+	if (RuleB(Custom, AutoScribeSpells)) {
+		ScribeSpells(1, level);
+	}
+
+	if (RuleB(Custom, AutoLearnDisciplines)) {
+		LearnDisciplines(1, level);
+	}
 }
 
 void Client::SendPath(Mob* target)
@@ -15251,14 +15287,11 @@ void LoadArmorSetBonuses() {
 	LogInfo("Loaded {} armor set items and {} armor set bonus configurations.", g_armor_set_item_map.size(), g_armor_set_bonuses_map.size());
 }
 
-void Client::CheckArmorSetBonuses(StatBonuses* itembonuses) {
-	if (!itembonuses) return;
-
+std::unordered_map<uint32, uint32> Client::CountEquippedArmorSetPieces() {
 	std::unordered_map<uint32, uint32> equipped_set_counts;
 	// All of the character's classes on multiclass servers, the single class otherwise
 	uint32 player_class_bit = GetClassesBits();
 
-	
 	// Expanded slot check to include main armor, jewelry, and weapon slots
 	const int16 equipment_slots[] = {
 		// Main Armor (8)
@@ -15303,6 +15336,15 @@ void Client::CheckArmorSetBonuses(StatBonuses* itembonuses) {
 		}
 	}
 
+	return equipped_set_counts;
+}
+
+void Client::CheckArmorSetBonuses(StatBonuses* itembonuses) {
+	if (!itembonuses) return;
+
+	const auto equipped_set_counts = CountEquippedArmorSetPieces();
+	uint32 player_class_bit = GetClassesBits();
+
 	// Process stats and state transitions for each active set
 	for (const auto& [set_id, piece_count] : equipped_set_counts) {
 		auto bonus_it = g_armor_set_bonuses_map.find(set_id);
@@ -15325,18 +15367,26 @@ void Client::CheckArmorSetBonuses(StatBonuses* itembonuses) {
 		if (new_tier != current_tier) {
 			uint32 visual_spell_id = 0;
 
+			// Custom:ArmorSetTierVisuals = "tier 1,tier 2,tier 3,tier lost" spell effect ids (0 = none)
+			const auto visuals = Strings::Split(RuleS(Custom, ArmorSetTierVisuals), ',');
+			auto visual = [&](size_t i) -> uint32 {
+				if (i >= visuals.size()) {
+					return 0;
+				}
+				std::string id = visuals[i];
+				return Strings::ToUnsignedInt(Strings::Trim(id));
+			};
+
 			if (new_tier > current_tier) {
 				// Gaining a tier
-				if (new_tier == 1)      visual_spell_id = 13; // Tier 1 visual
-				else if (new_tier == 2) visual_spell_id = 15; // Tier 2 visual
-				else if (new_tier == 3) visual_spell_id = 17; // Tier 3 visual
+				visual_spell_id = visual(new_tier - 1);
 
 				// Send upgrade message in chat (Yellow text = CC_Yellow / 15)
 				this->Message(15, "You have unlocked Armor Set Tier %d!", new_tier);
 			}
 			else if (new_tier < current_tier) {
-				// Losing a tier (e.g., spell ID 12 for fizzle/loss effect)
-				visual_spell_id = 12;
+				// Losing a tier
+				visual_spell_id = visual(3);
 
 				if (new_tier > 0) {
 					this->Message(15, "Your Armor Set has dropped to Tier %d.", new_tier);

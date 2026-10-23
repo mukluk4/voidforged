@@ -196,7 +196,7 @@ New rule (`common/ruletypes.h`): `Merchant:DynamicItemSellRefundPct` (INT, defau
 
 | Command | Status | Purpose |
 |---|---|---|
-| `#dyninfo` | Player (0) | Numbered overview by slot group with better/worse counts vs equipped; `#dyninfo <slot>` side-by-side; `#dyninfo compare <#> <#>`. Includes bank and shared bank. Popups stay under the 4,095-character limit. |
+| `#dyninfo` | Player (0) | Numbered overview by slot group with better/worse counts vs equipped; `#dyninfo <slot>` side-by-side; `#dyninfo compare <#> <#>`; `#dyninfo worn` totals all worn gear: dynamic rolls, other items + all augments, active set bonuses (Dynamic / Items / Sets / Total). Includes bank and shared bank. Popups stay under the 4,095-character limit. |
 | `#dynitem` | GMMgmt (200) | `give`, `info`, `reroll`, `setseed`, `reload` (acts on target if a client is targeted) |
 
 `#dynitem reload` re-reads both tables and calls `DynamicItemsManager::RefreshClient` for every
