@@ -9,7 +9,7 @@
 
 return {
     -- Where players return when a rift ends (the rift portal), and where the rift NPCs stand
-    hub = { zone_id = 459, x = -79, y = -158, z = 33, h = 0 },     -- The Void (thevoida) safe point
+    hub = { zone_id = 459, x = 25.33, y = 78.03, z = 1.21, h = 241.75 },  -- The Void (thevoida), same spot as its map waypoint
 
     -- spawn2/doors/zone version that holds the rift copy of each zone (gen_rift_zones.py)
     instance_version = 1,
