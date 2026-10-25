@@ -58,6 +58,9 @@ def lower_tiers(looks):
     return {name for name in looks if (t := tier_of(name)) and t[2] < best[(t[0], t[1])]}
 
 
+WEAPON_VENDORS = {'1H Slashing', '1H Blunt', '1H Piercing', 'Two-Handed', 'Shields', 'Fist & Ranged',
+                  'Unusual Weapons'}
+
 # Size variants ("Small Cloth Cap", "Medium Cloth Cap", "Large Cloth Cap", "Cloth Cap"): keep Medium and
 # the plain name; drop Small/Large when either exists. If only Small/Large exist, keep the largest.
 SIZE_RE = re.compile(r'^(Small|Medium|Large)\s+(.+)$')
@@ -109,12 +112,13 @@ lines = [
     ('', FONT),
     ('Each vendor has a tab. Set Keep (yellow column) to N for any glamour you want off that vendor.', FONT),
     ('Rows shaded red were pre-set to N by a first pass (reason in the Flag column); set them back to Y to keep.', FONT),
-    ('First-pass rules: test/joke/non-gear names, low-tier words (Rusty, Cracked...), lower Defiant tiers, Small/Large when a Medium/plain version exists.', FONT),
+    ('First-pass rules (weapon tabs only): test/joke/non-gear names, low-tier words (Rusty, Cracked...), lower Defiant tiers, Small/Large when a Medium/plain version exists.', FONT),
+    ('Armor tabs: one row per texture and color (the same 8 colors on every slot), listed helm to boots. The name is just one item with that look.', FONT),
     ('Patterns tab: name rules that drop matches on every vendor (e.g. "Practice" drops anything with Practice).', FONT),
     ('Summary tab: how many each vendor keeps. Lists must stay at 500 or fewer.', FONT),
     ('', FONT),
     ('When done: save this file and say so. The vendor lists are rebuilt from it; NPCs, prices and spots stay.', FONT),
-    ('Example: on Plate Helms, set "Rusty Iron Helm" to N to remove it.', FONT),
+    ('Example: on 1H Slashing, set "Rusty Short Sword" to N to remove it.', FONT),
 ]
 for r, (text, font) in enumerate(lines, 1):
     c = guide.cell(row=r, column=1, value=text)
@@ -140,9 +144,12 @@ for v in vendors:
     looks = [n[11:-1] if n.startswith("Glamour - '") and n.endswith("'") else n for _, n in v['items']]
     lower = lower_tiers(looks)
     sized = size_drops(looks)
+    # Armor rows are each the only glamour of their texture and tint (one per palette color, matched across
+    # slots), so a name says nothing about the look and dropping one breaks a matching set: no first pass
+    armor = v['vendor'] not in WEAPON_VENDORS
     for r, (item_id, name) in enumerate(v['items'], 2):
         look = looks[r - 2]
-        flag, keep = first_pass(look, lower, sized)
+        flag, keep = ('', 'Y') if armor else first_pass(look, lower, sized)
         row = [item_id, name, look, flag, keep]
         for col, val in enumerate(row, 1):
             c = ws.cell(row=r, column=col, value=val)

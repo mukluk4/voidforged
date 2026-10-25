@@ -1,11 +1,19 @@
-# Sorts every "Glamour - '<item>'" ornament into vendor lists: one vendor per armor slot and armor type,
-# plus weapon vendors by weapon type. Each vendor sells one glamour per distinct look (armor: material +
-# tint; weapons: model), so every list fits a merchant window (500).
+# Sorts every "Glamour - '<item>'" ornament into vendor lists: plate, chain and leather vendors (all slots),
+# exotic vendors per slot, robes, plus weapon vendors by weapon type. Each vendor sells one glamour per
+# distinct look (armor: material + a fixed palette of tints; weapons: model), so every list fits a merchant
+# window (500).
 #
 #   python gen_glamour_vendors.py <eqemu_config.json> report
 #   python gen_glamour_vendors.py <eqemu_config.json> sql <out.sql> <first_npc_id> <merchant_id_base> <x> <y> <z> <heading>
+#   --review <glamour_review.xlsx>  (any mode) leaves out rows set to Keep = N and names matching the Patterns tab
 import json, os, subprocess, sys
 from collections import defaultdict
+
+review_path = None
+if '--review' in sys.argv:
+    i = sys.argv.index('--review')
+    review_path = sys.argv[i + 1]
+    del sys.argv[i:i + 2]
 
 cfg = json.load(open(sys.argv[1]))['server']['database']
 mode = sys.argv[2]
@@ -39,25 +47,67 @@ def pick_rank(gid, name):
     return (1 if SIZED.match(name) else 0, gid)
 
 
+# Armor textures the RoF2 client may not have (untested, so left out), and Hero's Forge models (not wanted)
+SKIP_MATERIALS = {5, 7, 8, 24, 240}
+
+# Tints: most textures come in hundreds of near-identical tints. Each texture keeps the untinted look plus the
+# tint closest to each palette color, chosen only from tints that exist in every slot of that texture, so a
+# full set can always be bought in one matching color.
+NATURAL = {0, 0xFF000000}
+PALETTE = [0x141414, 0xDCDCDC, 0xB41414, 0x1432B4, 0x149614, 0xD2A01E, 0x781496]  # black, white, red, blue,
+                                                                                  # green, gold, purple
+# Plate, chain and leather are down to a few looks per slot, so each sells every slot from one vendor
+MERGED_TYPES = {'Plate', 'Chain', 'Leather'}
+
+
+def rgb_dist(a, b):
+    return sum((((a >> s) & 255) - ((b >> s) & 255)) ** 2 for s in (16, 8, 0))
+
+
 # Armor glamours: one per (slot, armor type, material, tint)
 lists = defaultdict(list)
 best = {}
 for gid, name, slots, material, color in query(
         "SELECT id, Name, slots, material, color FROM items WHERE Name LIKE 'Glamour - %' "
-        "AND NOT (slots & 26624) ORDER BY id"):
-    gid, slots, material = int(gid), int(slots), int(material)
+        "AND NOT (slots & 26624) AND herosforgemodel = 0 ORDER BY id"):
+    gid, slots, material, color = int(gid), int(slots), int(material), int(color)
     slot_name = next((n for bit, n in SLOTS if slots & bit), None)
-    if not slot_name:
+    if not slot_name or material in SKIP_MATERIALS:
         continue
     if slot_name == 'Chests' and material in ROBES:
         kind = 'Robes'
     else:
         kind = ARMOR_TYPES.get(material, 'Exotic')
-    vendor = kind if kind == 'Robes' else f'{kind} {slot_name}'
-    key = (vendor, material, color)
+    key = (kind, slot_name, material, color)
     if key not in best or pick_rank(gid, name) < best[key]:
         best[key] = pick_rank(gid, name)
-for (vendor, _m, _c), (_r, gid) in sorted(best.items(), key=lambda kv: kv[1][1]):
+
+slot_tints = defaultdict(lambda: defaultdict(set))   # material -> slot -> tints
+for kind, slot_name, material, color in best:
+    slot_tints[material][slot_name].add(color)
+tint_order = {}                                      # material -> {tint: palette position}
+for material, by_slot in slot_tints.items():
+    coverage = defaultdict(int)
+    for tints in by_slot.values():
+        for t in tints:
+            coverage[t] += 1
+    pool = [t for t, n in coverage.items() if n == max(coverage.values())]
+    order = {t: -1 for t in pool if t in NATURAL}
+    rest = [t for t in pool if t not in NATURAL]
+    for i, target in enumerate(PALETTE):
+        if rest:
+            order.setdefault(min(rest, key=lambda t: rgb_dist(t, target)), i)
+    tint_order[material] = order
+
+slot_index = {n: i for i, (_, n) in enumerate(SLOTS)}
+picked = [(key, gid) for key, (_r, gid) in best.items() if key[3] in tint_order[key[2]]]
+# Vendor order: slot (helm to boots), then texture, then palette color
+for (kind, slot_name, material, color), gid in sorted(
+        picked, key=lambda kv: (slot_index[kv[0][1]], kv[0][2], tint_order[kv[0][2]][kv[0][3]])):
+    if kind == 'Robes' or kind in MERGED_TYPES:
+        vendor = kind
+    else:
+        vendor = f'{kind} {slot_name}'
     lists[vendor].append(gid)
 
 # Weapon glamours: one per model (idfile), typed by the weapon the glamour copies
@@ -67,7 +117,8 @@ src_type = {name: int(t) for name, t in query(
     "AND (slots & 26624)) GROUP BY Name")}
 best_models = {}
 for gid, name, idfile in query(
-        "SELECT id, Name, idfile FROM items WHERE Name LIKE 'Glamour - %' AND (slots & 26624) ORDER BY id"):
+        "SELECT id, Name, idfile FROM items WHERE Name LIKE 'Glamour - %' AND (slots & 26624) "
+        "AND idfile NOT IN ('IT0', 'IT63') ORDER BY id"):           # IT0: no model, IT63: dropped-item bag
     gid = int(gid)
     src = name[11:-1]
     vendor = WEAPON_TYPES.get(src_type.get(src), 'Unusual Weapons')
@@ -77,10 +128,29 @@ for gid, name, idfile in query(
 for (vendor, _f), (_r, gid) in sorted(best_models.items(), key=lambda kv: kv[1][1]):
     lists[vendor].append(gid)
 
+# Review sheet edits: Keep = N rows, and Patterns (case-insensitive name substring, on one vendor or all)
+if review_path:
+    from openpyxl import load_workbook
+    wb = load_workbook(review_path, read_only=True)
+    dropped = set()
+    for ws in wb.worksheets:
+        if ws.title in ('How to use', 'Summary', 'Patterns'):
+            continue
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            if row and row[0] is not None and str(row[4]).strip().upper() == 'N':
+                dropped.add(int(row[0]))
+    rules = [(str(p).lower(), (str(v).strip() if v else '')) for p, v, *_ in
+             wb['Patterns'].iter_rows(min_row=2, values_only=True) if p]
+    if rules:
+        names = dict(query("SELECT id, Name FROM items WHERE Name LIKE 'Glamour - %'"))
+    for vendor, ids in lists.items():
+        lists[vendor] = [i for i in ids if i not in dropped and not any(
+            p in names[str(i)].lower() and (not v or v == vendor) for p, v in rules)]
+
 # Anything over a merchant window gets split into numbered vendors
 vendors = []
 # Walking order: each armor type helm to boots, then robes, then weapons
-ORDER = ([f'{t} {slot}' for t in ('Plate', 'Chain', 'Leather', 'Exotic') for _, slot in SLOTS] + ['Robes'] +
+ORDER = (['Plate', 'Chain', 'Leather'] + [f'Exotic {slot}' for _, slot in SLOTS] + ['Robes'] +
          ['1H Slashing', '1H Blunt', '1H Piercing', 'Two-Handed', 'Shields', 'Fist & Ranged', 'Unusual Weapons'])
 for name in sorted(lists, key=lambda n: (ORDER.index(n) if n in ORDER else len(ORDER), n)):
     ids = lists[name]
@@ -111,6 +181,7 @@ import math
 
 PRICE_COPPER = 1000 * 1000          # 1,000 platinum
 TEMPLATE_NPC = 1120001103           # Purveyor_of_Glamour (bazaar): copied look
+RESERVED_IDS = 100                  # first_id .. first_id + 99 belong to the glamour vendors
 
 
 def eq_heading(x1, y1, x2, y2):
@@ -159,14 +230,16 @@ if mode in ('sql', 'row'):
 
     npc_cols = [r[0] for r in query("SELECT column_name FROM information_schema.columns WHERE table_schema = "
                                     "DATABASE() AND table_name = 'npc_types' ORDER BY ordinal_position")]
+    # The whole reserved block is cleared, so vendors from an older, longer list don't linger
+    last_id = first_id + RESERVED_IDS - 1
     sql = ['-- Glamour vendors. GENERATED by gen_glamour_vendors.py', 'START TRANSACTION;', '',
            f'-- Every glamour costs 1,000 platinum (merchants refuse to buy them back: client_packet.cpp)',
            f"UPDATE items SET price = {PRICE_COPPER} WHERE Name LIKE 'Glamour - %';", '',
-           f'DELETE FROM merchantlist WHERE merchantid BETWEEN {first_id} AND {first_id + n - 1};',
-           f'DELETE FROM spawn2 WHERE spawngroupID BETWEEN {first_id} AND {first_id + n - 1};',
-           f'DELETE FROM spawnentry WHERE spawngroupID BETWEEN {first_id} AND {first_id + n - 1};',
-           f'DELETE FROM spawngroup WHERE id BETWEEN {first_id} AND {first_id + n - 1};',
-           f'DELETE FROM npc_types WHERE id BETWEEN {first_id} AND {first_id + n - 1};', '']
+           f'DELETE FROM merchantlist WHERE merchantid BETWEEN {first_id} AND {last_id};',
+           f'DELETE FROM spawn2 WHERE spawngroupID BETWEEN {first_id} AND {last_id};',
+           f'DELETE FROM spawnentry WHERE spawngroupID BETWEEN {first_id} AND {last_id};',
+           f'DELETE FROM spawngroup WHERE id BETWEEN {first_id} AND {last_id};',
+           f'DELETE FROM npc_types WHERE id BETWEEN {first_id} AND {last_id};', '']
     for i, ((vname, ids), (x, y, z, h)) in enumerate(zip(vendors, spots)):
         vid = first_id + i
         overrides = {'id': str(vid), 'name': "'Glamour_Outfitter'", 'lastname': repr(vname[:32]),
