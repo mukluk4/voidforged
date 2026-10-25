@@ -784,9 +784,13 @@ namespace {
 			std::string source;
 		};
 		std::vector<WornEffect> worn_effects;
+		std::vector<WornEffect> focus_effects;
 		auto add_worn_effect = [&](const EQ::ItemData *item) {
 			if (item->Worn.Effect > 0 && item->Worn.Type == EQ::item::ItemEffectWorn && IsValidSpell(item->Worn.Effect)) {
 				worn_effects.push_back({static_cast<uint16>(item->Worn.Effect), item->Worn.Level, item->Name});
+			}
+			if (item->Focus.Effect > 0 && item->Focus.Type == EQ::item::ItemEffectFocus && IsValidSpell(item->Focus.Effect)) {
+				focus_effects.push_back({static_cast<uint16>(item->Focus.Effect), item->Focus.Level, item->Name});
 			}
 		};
 
@@ -967,6 +971,67 @@ namespace {
 				set_lines += "&nbsp;&nbsp;" + DialogueWindow::ColorMessage(
 					"light_blue_1",
 					fmt::format("{} ({})", spells[worn_effects[i].spell_id].name, worn_effects[i].source)
+				) + DialogueWindow::Break();
+			}
+		}
+
+		// Item focuses don't stack either: each cast uses the best item focus of each focus type. Copies of one
+		// focus are listed once, and a focus is dropped when another with the same focus types and the same limits
+		// is at least as strong, since it can never be the one picked.
+		std::vector<std::pair<uint16, std::vector<std::string>>> focuses; // spell id, sources
+		for (const auto &f : focus_effects) {
+			auto it = std::find_if(focuses.begin(), focuses.end(), [&](const auto &e) { return e.first == f.spell_id; });
+			if (it == focuses.end()) {
+				focuses.push_back({f.spell_id, {f.source}});
+			} else if (std::find(it->second.begin(), it->second.end(), f.source) == it->second.end()) {
+				it->second.push_back(f.source);
+			}
+		}
+		auto focus_shape = [&](uint16 spell_id, bool focus_slots) {
+			std::vector<std::tuple<int, int, int, int>> shape; // effect, base, limit, max
+			const auto &sp = spells[spell_id];
+			for (int i = 0; i < EFFECT_COUNT; ++i) {
+				if (!IsBlankSpellEffect(spell_id, i) && (c->IsFocusEffect(spell_id, i) != 0) == focus_slots) {
+					shape.emplace_back(sp.effect_id[i], sp.base_value[i], sp.limit_value[i], sp.max_value[i]);
+				}
+			}
+			return shape;
+		};
+		auto outclassed_by = [&](uint16 weak, uint16 strong) {
+			if (focus_shape(weak, false) != focus_shape(strong, false)) {
+				return false; // different limits: they can apply to different spells
+			}
+			const auto w = focus_shape(weak, true);
+			const auto s = focus_shape(strong, true);
+			if (w.size() != s.size()) {
+				return false;
+			}
+			for (size_t i = 0; i < w.size(); ++i) {
+				if (std::get<0>(w[i]) != std::get<0>(s[i]) ||
+					std::get<1>(w[i]) > std::get<1>(s[i]) || std::get<2>(w[i]) > std::get<2>(s[i])) {
+					return false;
+				}
+			}
+			return true;
+		};
+		std::vector<size_t> working_focuses;
+		for (size_t i = 0; i < focuses.size(); ++i) {
+			bool shadowed = false;
+			for (size_t j = 0; j < focuses.size() && !shadowed; ++j) {
+				// Of two equal focuses the first one listed is kept
+				shadowed = j != i && outclassed_by(focuses[i].first, focuses[j].first) &&
+					(j < i || !outclassed_by(focuses[j].first, focuses[i].first));
+			}
+			if (!shadowed) {
+				working_focuses.push_back(i);
+			}
+		}
+		if (!working_focuses.empty()) {
+			set_lines += DialogueWindow::ColorMessage("white", "Focus effects") + DialogueWindow::Break();
+			for (const auto i : working_focuses) {
+				set_lines += "&nbsp;&nbsp;" + DialogueWindow::ColorMessage(
+					"light_blue_1",
+					fmt::format("{} ({})", spells[focuses[i].first].name, Strings::Join(focuses[i].second, ", "))
 				) + DialogueWindow::Break();
 			}
 		}

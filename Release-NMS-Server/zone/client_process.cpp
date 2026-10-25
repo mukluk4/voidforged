@@ -1106,6 +1106,25 @@ void Client::BulkSendInventoryItems()
 	safe_delete(outapp);
 }
 
+// A merchantlist row with bucket_name/bucket_value only shows (and sells) once the character's own
+// bucket passes bucket_comparison. Shared by regular and alternate currency merchants.
+bool Client::PassesMerchantBucket(const MerchantList& ml)
+{
+	if (ml.bucket_name.empty() || ml.bucket_value.empty()) {
+		return true;
+	}
+
+	DataBucketKey k = GetScopedBucketKeys();
+	k.key = ml.bucket_name;
+
+	auto b = DataBucket::GetData(k);
+	if (b.value.empty()) {
+		return false;
+	}
+
+	return zone->CompareDataBucket(ml.bucket_comparison, ml.bucket_value, b.value);
+}
+
 void Client::BulkSendMerchantInventory(int merchant_id, int npcid) {
 	const EQ::ItemData* handy_item = nullptr;
 	const EQ::ItemData *item = nullptr;
@@ -1132,23 +1151,9 @@ void Client::BulkSendMerchantInventory(int merchant_id, int npcid) {
 			break;
 		}
 
-		auto bucket_name = ml.bucket_name;
-		auto const& bucket_value = ml.bucket_value;
-		if (!bucket_name.empty() && !bucket_value.empty()) {
-
-			DataBucketKey k = GetScopedBucketKeys();
-			k.key = bucket_name;
-
-			auto b = DataBucket::GetData(k);
-			if (b.value.empty()) {
-				skipped_item = true;
-				continue;
-			}
-
-			if (!zone->CompareDataBucket(ml.bucket_comparison, bucket_value, b.value)) {
-				skipped_item = true;
-				continue;
-			}
+		if (!PassesMerchantBucket(ml)) {
+			skipped_item = true;
+			continue;
 		}
 
 		if (ml.probability != 100 && zone->random.Int(1, 100) > ml.probability) {

@@ -2773,6 +2773,11 @@ void Client::Handle_OP_AltCurrencyMerchantRequest(const EQApplicationPacket *app
 				continue;
 			}
 
+			// Bucket gates (e.g. rift tier gear unlocks) apply here too, not just on regular merchants
+			if (!PassesMerchantBucket(ml)) {
+				continue;
+			}
+
 			item = database.GetItem(ml.item);
 			if (item) {
 				// The window's "Show only items I can use" filter checks the client's single (displayed)
@@ -2835,6 +2840,10 @@ void Client::Handle_OP_AltCurrencyPurchase(const EQApplicationPacket *app)
 
 			int32 fac = tar->GetPrimaryFaction();
 			if (fac != 0 && GetModCharacterFactionLevel(fac) < ml.faction_required) {
+				continue;
+			}
+
+			if (!PassesMerchantBucket(ml)) {
 				continue;
 			}
 
