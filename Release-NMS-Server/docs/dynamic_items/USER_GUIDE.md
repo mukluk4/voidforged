@@ -175,31 +175,41 @@ WHERE class_id = 7 AND affix = 'flying_kick_dmg_pct';
 
 ### Starting data
 
-Balanced against **Plane of Time** drops (2026-10-21): PoTime gear averages about 180 HP, 175 Mana,
-125 Endurance, 30 AC and 12 per regular stat, has **no heroic stats**, and carries all five resists
-at about 13 each. Dynamic items start a little above that, so they're an upgrade without being a big
-jump. Every item rolls these guaranteed lines:
+The ranges were tuned in three passes:
+
+1. **Plane of Time** (2026-10-21): a little above PoTime drops (about 180 HP, 175 Mana, 30 AC and
+   12 per stat, no heroics).
+2. **Melee best-in-slot** (2026-10-23, `rebalance_to_bis.py`): a full set of the 8 visible dynamic
+   slots lands at about **122%** of best-in-slot gear in those slots, measured on a
+   Warrior/Paladin/Monk with `#dyninfo worn`.
+3. **Caster best-in-slot** (2026-10-24, `rebalance_casters.py`): the same 122% target against a
+   Necromancer/Enchanter/Magician in best-in-slot gear. INT casters reach about 480 INT and 480
+   Spell Damage per set. Priests mirror that on WIS and Heal Amount, and keep 350 Spell Damage so
+   they can solo. Caster STR, DEX, AGI, Attack and AC came down, and caster STA went up.
+
+Every item rolls these guaranteed lines (per tier 1 item before `stat_multiplier`; a full set of
+the 8 visible pieces is about 7.8x these):
 
 | Class | HP | Mana | End | AC | STR | STA | DEX | AGI | INT | WIS | CHA | hSTR | hSTA | hDEX | hAGI | hINT | hWIS | Spell Dmg | Heal Amt | ATK |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 Warrior | 190-260 | - | 150-210 | 32-52 | 14-26 | 14-26 | 9-16 | 14-26 | 3-8 | 3-8 | 3-8 | 3-8 | 3-8 | 2-5 | 3-8 | 1-3 | 1-3 | 1-5 | 1-5 | 12-30 |
-| 2 Cleric | 160-220 | 190-260 | - | 32-52 | 9-16 | 9-16 | 3-8 | 3-8 | 3-8 | 14-26 | 3-8 | 2-5 | 2-5 | 1-3 | 1-3 | 1-3 | 3-8 | 5-15 | 10-30 | 1-5 |
-| 3 Paladin | 183-250 | 48-65 | 113-158 | 29-47 | 13-24 | 13-24 | 8-14 | 11-22 | 3-8 | 6-13 | 3-8 | 3-7 | 3-7 | 2-5 | 3-7 | 1-3 | 2-4 | 2-8 | 3-11 | 9-24 |
-| 4 Ranger | 183-250 | 48-65 | 113-158 | 24-41 | 8-14 | 9-16 | 13-23 | 11-22 | 3-8 | 6-13 | 3-8 | 2-5 | 2-5 | 3-8 | 3-7 | 1-3 | 2-4 | 2-8 | 3-11 | 9-24 |
-| 5 Shadowknight | 183-250 | 48-65 | 113-158 | 26-42 | 11-22 | 13-24 | 8-14 | 11-22 | 6-13 | 3-8 | 3-8 | 3-7 | 3-7 | 2-5 | 3-7 | 2-4 | 1-3 | 3-11 | 1-5 | 9-24 |
-| 6 Druid | 160-220 | 190-260 | - | 25-42 | 3-8 | 9-16 | 3-8 | 3-8 | 3-8 | 14-26 | 3-8 | 1-3 | 2-5 | 1-3 | 1-3 | 1-3 | 3-8 | 5-15 | 10-30 | 1-5 |
-| 7 Monk | 190-260 | - | 150-210 | 25-42 | 14-26 | 9-16 | 16-28 | 14-26 | 3-8 | 3-8 | 3-8 | 3-8 | 2-5 | 4-9 | 3-8 | 1-3 | 1-3 | 1-5 | 1-5 | 12-30 |
-| 8 Bard | 183-250 | 48-65 | 113-158 | 23-39 | 8-14 | 9-16 | 13-23 | 11-22 | 6-13 | 3-8 | 14-26 | 2-5 | 2-5 | 3-8 | 3-7 | 2-4 | 1-3 | 3-11 | 1-5 | 9-24 |
-| 9 Rogue | 190-260 | - | 150-210 | 28-46 | 9-16 | 9-16 | 16-28 | 14-26 | 3-8 | 3-8 | 3-8 | 2-5 | 2-5 | 4-9 | 3-8 | 1-3 | 1-3 | 1-5 | 1-5 | 12-30 |
-| 10 Shaman | 160-220 | 190-260 | - | 28-46 | 9-16 | 9-16 | 3-8 | 3-8 | 3-8 | 14-26 | 3-8 | 2-5 | 2-5 | 1-3 | 1-3 | 1-3 | 3-8 | 5-15 | 10-30 | 1-5 |
-| 11 Necromancer | 160-220 | 190-260 | - | 18-32 | 3-8 | 9-16 | 3-8 | 3-8 | 14-26 | 3-8 | 3-8 | 1-3 | 2-5 | 1-3 | 1-3 | 3-8 | 1-3 | 10-30 | 1-5 | 1-5 |
-| 12 Wizard | 160-220 | 190-260 | - | 18-32 | 3-8 | 9-16 | 3-8 | 3-8 | 14-26 | 3-8 | 3-8 | 1-3 | 2-5 | 1-3 | 1-3 | 3-8 | 1-3 | 10-30 | 1-5 | 1-5 |
-| 13 Magician | 160-220 | 190-260 | - | 18-32 | 3-8 | 9-16 | 3-8 | 3-8 | 14-26 | 3-8 | 3-8 | 1-3 | 2-5 | 1-3 | 1-3 | 3-8 | 1-3 | 10-30 | 1-5 | 1-5 |
-| 14 Enchanter | 160-220 | 190-260 | - | 18-32 | 3-8 | 9-16 | 3-8 | 3-8 | 14-26 | 3-8 | 14-26 | 1-3 | 2-5 | 1-3 | 1-3 | 3-8 | 1-3 | 10-30 | 1-5 | 1-5 |
-| 15 Beastlord | 183-250 | 48-65 | 113-158 | 25-41 | 9-16 | 9-16 | 13-23 | 11-22 | 3-8 | 6-13 | 3-8 | 2-5 | 2-5 | 3-8 | 3-7 | 1-3 | 2-4 | 2-8 | 3-11 | 9-24 |
-| 16 Berserker | 190-260 | - | 150-210 | 28-46 | 14-26 | 14-26 | 16-28 | 9-16 | 3-8 | 3-8 | 3-8 | 3-8 | 3-8 | 4-9 | 2-5 | 1-3 | 1-3 | 1-5 | 1-5 | 12-30 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 Warrior | 424-518 | - | 290-350 | 124-161 | 49-61 | 25-37 | 33-40 | 38-50 | 21-26 | 23-28 | 18-23 | 19-25 | 19-25 | 11-15 | 12-15 | 5-10 | 5-10 | 23-27 | 24-28 | 26-44 |
+| 2 Cleric | 353-436 | 360-440 | - | 80-103 | 11-14 | 44-59 | 24-28 | 24-28 | 21-26 | 52-71 | 25-32 | 4-6 | 11-17 | 5-10 | 5-10 | 5-10 | 19-25 | 37-53 | 47-76 | 11-14 |
+| 3 Paladin | 406-497 | 265-320 | 145-175 | 111-145 | 48-59 | 24-35 | 32-38 | 35-46 | 21-26 | 26-33 | 18-23 | 17-23 | 17-23 | 10-14 | 10-14 | 5-10 | 8-14 | 24-30 | 26-34 | 23-38 |
+| 4 Ranger | 406-497 | 265-320 | 145-175 | 94-125 | 43-49 | 20-27 | 37-47 | 35-46 | 21-26 | 26-33 | 18-23 | 16-21 | 17-23 | 10-14 | 10-14 | 5-10 | 8-14 | 24-30 | 26-34 | 23-38 |
+| 5 Shadowknight | 406-497 | 265-320 | 145-175 | 99-131 | 46-57 | 24-35 | 32-38 | 35-46 | 24-31 | 23-28 | 18-23 | 16-21 | 17-23 | 10-14 | 10-14 | 8-14 | 5-10 | 25-33 | 24-28 | 23-38 |
+| 6 Druid | 353-436 | 360-440 | - | 62-83 | 10-12 | 44-59 | 24-28 | 24-28 | 21-26 | 52-71 | 25-32 | 2-3 | 11-17 | 5-10 | 5-10 | 5-10 | 19-25 | 37-53 | 47-76 | 11-14 |
+| 7 Monk | 424-518 | - | 290-350 | 96-130 | 49-61 | 20-27 | 40-52 | 38-50 | 21-26 | 23-28 | 18-23 | 19-25 | 19-25 | 12-15 | 12-15 | 5-10 | 5-10 | 23-27 | 24-28 | 26-44 |
+| 8 Bard | 406-497 | 265-320 | 145-175 | 88-117 | 43-49 | 20-27 | 37-47 | 35-46 | 24-31 | 23-28 | 29-41 | 16-21 | 17-23 | 10-14 | 10-14 | 8-14 | 5-10 | 25-33 | 24-28 | 23-38 |
+| 9 Rogue | 424-518 | - | 290-350 | 108-142 | 44-51 | 20-27 | 40-52 | 38-50 | 21-26 | 23-28 | 18-23 | 19-25 | 19-25 | 12-15 | 12-15 | 5-10 | 5-10 | 23-27 | 24-28 | 26-44 |
+| 10 Shaman | 353-436 | 360-440 | - | 69-91 | 11-14 | 44-59 | 24-28 | 24-28 | 21-26 | 52-71 | 25-32 | 4-6 | 11-17 | 5-10 | 5-10 | 5-10 | 19-25 | 37-53 | 47-76 | 11-14 |
+| 11 Necromancer | 353-436 | 360-440 | - | 44-63 | 10-12 | 44-59 | 24-28 | 24-28 | 52-71 | 23-28 | 25-32 | 2-3 | 11-17 | 5-10 | 5-10 | 19-25 | 5-10 | 47-76 | 24-28 | 11-14 |
+| 12 Wizard | 353-436 | 360-440 | - | 44-63 | 10-12 | 44-59 | 24-28 | 24-28 | 52-71 | 23-28 | 25-32 | 2-3 | 11-17 | 5-10 | 5-10 | 19-25 | 5-10 | 47-76 | 24-28 | 11-14 |
+| 13 Magician | 353-436 | 360-440 | - | 44-63 | 10-12 | 44-59 | 24-28 | 24-28 | 52-71 | 23-28 | 25-32 | 2-3 | 11-17 | 5-10 | 5-10 | 19-25 | 5-10 | 47-76 | 24-28 | 11-14 |
+| 14 Enchanter | 353-436 | 360-440 | - | 44-63 | 10-12 | 44-59 | 24-28 | 24-28 | 52-71 | 23-28 | 40-56 | 2-3 | 11-17 | 5-10 | 5-10 | 19-25 | 5-10 | 47-76 | 24-28 | 11-14 |
+| 15 Beastlord | 406-497 | 265-320 | 145-175 | 97-128 | 44-51 | 20-27 | 37-47 | 35-46 | 21-26 | 26-33 | 18-23 | 17-23 | 17-23 | 10-14 | 10-14 | 5-10 | 8-14 | 24-30 | 26-34 | 23-38 |
+| 16 Berserker | 424-518 | - | 290-350 | 108-142 | 49-61 | 25-37 | 40-52 | 33-40 | 21-26 | 23-28 | 18-23 | 19-25 | 19-25 | 12-15 | 11-15 | 5-10 | 5-10 | 23-27 | 24-28 | 26-44 |
 
-**Melee DPS** (Rogue, Monk, Berserker) get a standout DEX band: regular 16-28, heroic 4-9.
+**Melee DPS** (Rogue, Monk, Berserker) get a standout DEX band: regular 40-52, heroic 12-15.
 
 **Hybrids** are blended from two templates, line by line: 75% of a melee class plus 25% of a
 caster class. Paladin = Warrior + Cleric, Shadowknight = Warrior + Necromancer, Ranger = Rogue +
@@ -208,20 +218,22 @@ hybrid tanks always have less HP and AC than a Warrior. Signature lines keep ful
 instrument mods, Ranger archery). In their random affixes, melee affixes are scaled to 75% and spell
 or healing % to 25%. The scripts that produce these numbers are in `utils/scripts/dynamic_items/`.
 
-**Every item** also has all six regular resists (Magic, Fire, Cold, Disease, Poison, Corruption) at
-**15-25 each**, never 0.
+**Every item** also has all six regular resists, never 0: Magic, Fire, Cold, Disease and Poison
+share one range for every class (**28-42**), and Corruption rolls **15-25**. The five matching
+heroic resists are guaranteed too, at **6-12** each.
 
 Random affix pools (weight in brackets): weapon skills roll 3–12%, defensive skills 2–8%, ability
 skills 3–10%, ability damage 5–18%, spell/heal/bard 3–15%.
 
 **Advanced stats** are guaranteed lines too (migration v28):
 
-* **On every item, never 0:** Spell Damage and Heal Amount roll 10-30 (strong), 5-15 (medium) or
-  1-5 (weak); Attack rolls 12-30, 6-15 or 1-5 (see the table above for each class).
+* **On every item, never 0:** Spell Damage, Heal Amount and Attack (see the table above for each
+  class).
 * **Can roll 0** (then the item doesn't have it and it isn't shown): HP regen, Mana regen (not pure
   melee), Endurance regen (melee and hybrids), Combat Effects, Spell Shield, DoT Shielding,
   Avoidance and Stun Resist (everyone), Shielding, DS Mitigation, Strike Through and Accuracy (melee
-  and hybrids), Damage Shield (WAR/PAL/SHD): all **0-3**.
+  and hybrids), Damage Shield (WAR/PAL/SHD). Most are **0-3**; the bigger ones are Avoidance 0-13,
+  Accuracy 0-23 (hybrids 0-15) and HP regen 0-11 (casters 0-3).
 * **Crits** can roll 0 too and every class has all of them, weighted by use. Crit rates max 6 / 4 / 2,
   crit damage max 10 / 6 / 3 (strong / medium / weak). Strong: DD crit WIZ/MAG, DoT crit NEC/DRU,
   heal crits CLR/DRU/SHM, melee crit WAR/MNK/ROG/BER, archery crit RNG.
@@ -233,8 +245,8 @@ every line, resists included, so a 0.8 item rolls resists of 12-20.
 To make a 0-able stat appear less often, lower its `max_value`; to make it never appear for a
 class, delete that class's row.
 
-**Heroic resists** (all six) are in every class's random pool at **2-10** (weight 20 each), low
-enough not to crowd out class affixes.
+**Heroic Corruption** is the one heroic resist left in the random pools, at **2-10** (weight 20),
+low enough not to crowd out class affixes.
 
 | Class | Random affixes |
 |---|---|

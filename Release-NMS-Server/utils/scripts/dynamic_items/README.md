@@ -16,3 +16,13 @@ statements of about 150 rows each.
 
 Balance notes (2026-10-21): ranges are set a little above Plane of Time drops (about 180 HP, 175
 mana, 30 AC and 12 per stat, no heroics, all five resists near 13).
+
+Later passes change the live table directly and save their SQL here:
+
+| Date | Script | SQL | What it does |
+|---|---|---|---|
+| 2026-10-22 | `rebalance_heroics.py` | `2026_10_22_heroics_base_rebalance.sql` | Heroic bands and base HP / Mana / AC targets |
+| 2026-10-23 | `rebalance_to_bis.py` | `2026_10_23_bis_rebalance.sql` | 8 visible pieces at ~122% of melee best-in-slot (migration v30) |
+| 2026-10-24 | `rebalance_casters.py` | `2026_10_24_caster_rebalance.sql` | Casters at ~122% of caster best-in-slot: INT/WIS 480, Spell Damage 480 (priests 350), Heal Amount 480 for priests; caster STR, DEX, AGI, Attack, AC and HP regen down. **Not in a migration yet.** |
+
+Each rebalance first copies the table to `dynamic_affix_pool_backup_<date>_<name>`.
