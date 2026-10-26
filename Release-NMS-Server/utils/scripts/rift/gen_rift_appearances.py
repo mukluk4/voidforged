@@ -60,8 +60,11 @@ CURATED_BOSSES = {
 # Tallest anything may stand in tight zones: regulars get 3/4 of it, Executioners 9/10, the Guardian all of it.
 # Zones not listed keep the defaults (Executioners up to 16, the Guardian at least 12).
 SIZE_CAP = {
-    'befallen': 9,
+    'befallen': 7,
+    'cazicthule': 7,
 }
+# Models that stand too tall for a capped zone at any size (Treant): left out of those zones' pools
+CAP_SKIP_RACES = [244]
 
 PLAYER_RACES = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 128, 130, 330, 522}
 SKIP_RACES = {0, 127, 240}           # none / invisible man / untargetable
@@ -208,7 +211,7 @@ out = ['-- =====================================================================
        '-- global: models the client loads in every zone (from Resources/GlobalLoad.txt), used everywhere.',
        '-- ============================================================================',
        '',
-       'local M = { zones = {}, bosses = {}, global = {}, size_cap = {} }',
+       'local M = { zones = {}, bosses = {}, global = {}, size_cap = {}, cap_skip_races = {} }',
        '']
 counts = {}
 for zone in ZONES:
@@ -232,6 +235,9 @@ out.append('')
 out.append('-- size_cap[short_name]: tallest model allowed in tight zones (see SIZE_CAP in the generator)')
 for zone, cap in SIZE_CAP.items():
     out.append(f'M.size_cap["{zone}"] = {cap}')
+out.append('-- cap_skip_races[race]: never used in a capped zone (too tall at any size)')
+for race in CAP_SKIP_RACES:
+    out.append(f'M.cap_skip_races[{race}] = true')
 out.append('')
 out.append('return M')
 open(out_path, 'w', newline='\n').write('\n'.join(out) + '\n')

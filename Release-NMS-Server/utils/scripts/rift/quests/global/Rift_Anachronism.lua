@@ -20,6 +20,15 @@ local function zone_pool()
     local pool = {}
     for _, entry in ipairs(APPEARANCES.zones[eq.get_zone_short_name()] or {}) do table.insert(pool, entry) end
     for _, entry in ipairs(APPEARANCES.global) do table.insert(pool, entry) end
+
+    -- Tight (size-capped) zones also leave out models too tall at any size
+    if APPEARANCES.size_cap[eq.get_zone_short_name()] then
+        local fits = {}
+        for _, entry in ipairs(pool) do
+            if not (APPEARANCES.cap_skip_races or {})[entry.race] then table.insert(fits, entry) end
+        end
+        pool = fits
+    end
     return pool
 end
 

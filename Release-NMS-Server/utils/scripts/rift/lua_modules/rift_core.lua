@@ -57,6 +57,7 @@ rift.REWARD = {
     PER_TIER      = cfg.reward.per_tier,
     SPEED_SECONDS = cfg.reward.speed_seconds,
     SPEED_BONUS   = cfg.reward.speed_bonus,
+    PLATINUM_PER_TIER = cfg.reward.platinum_per_tier or 0,
 }
 
 local PYLON_THRESHOLDS = cfg.pylon_at
@@ -340,6 +341,13 @@ function rift.grant_rewards(client, tier, clear_time)
     client:AddAlternateCurrencyValue(r.CURRENCY_ID, amount)
     client:Message(15, string.format("You receive %d %s. (Total: %d)",
         amount, r.CURRENCY_NAME, client:GetAlternateCurrencyValue(r.CURRENCY_ID)))
+
+    -- Platinum: running rifts leaves no time for farming coin
+    local platinum = r.PLATINUM_PER_TIER * tier
+    if platinum > 0 then
+        client:AddMoneyToPP(0, 0, 0, platinum, true)
+        client:Message(15, string.format("You receive %d platinum.", platinum))
+    end
 end
 
 function rift.send_to_hub(client)

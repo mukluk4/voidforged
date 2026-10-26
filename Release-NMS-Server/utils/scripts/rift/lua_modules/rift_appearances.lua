@@ -6,7 +6,7 @@
 -- global: models the client loads in every zone (from Resources/GlobalLoad.txt), used everywhere.
 -- ============================================================================
 
-local M = { zones = {}, bosses = {}, global = {}, size_cap = {} }
+local M = { zones = {}, bosses = {}, global = {}, size_cap = {}, cap_skip_races = {} }
 
 M.zones["codecay"] = {
     { race = 250, gender = 2, texture = 0, helmtexture = 0, size = 12, bodytype = 3, name = "Ethereal Banshee" },
@@ -288,6 +288,9 @@ M.global = {
 }
 
 -- size_cap[short_name]: tallest model allowed in tight zones (see SIZE_CAP in the generator)
-M.size_cap["befallen"] = 9
+M.size_cap["befallen"] = 7
+M.size_cap["cazicthule"] = 7
+-- cap_skip_races[race]: never used in a capped zone (too tall at any size)
+M.cap_skip_races[244] = true
 
 return M

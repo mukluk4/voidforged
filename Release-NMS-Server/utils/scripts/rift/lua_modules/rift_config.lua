@@ -37,6 +37,7 @@ return {
         per_tier      = 2,
         speed_seconds = 600,
         speed_bonus   = 25,
+        platinum_per_tier = 1000,  -- also paid on a clear: tier x this, to each player (no speed bonus)
     },
 
     -- Rift NPC types (npc_types ids)

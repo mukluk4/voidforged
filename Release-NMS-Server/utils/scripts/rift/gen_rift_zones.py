@@ -15,6 +15,8 @@ import argparse, json, os, subprocess, sys
 ARCHETYPE_GROUP = 5003834      # spawngroup "rift_archetypes" (the four archetype NPC types)
 CONTROLLER_GROUP = 5003835     # spawngroup holding the rift controller NPC
 VERSION = 1                    # instance version the rift copies live in (rift_config.lua instance_version)
+ENTRY_CLEAR = 40               # no archetype spawns within this many units of the entry point (same floor) ...
+ENTRY_CLEAR_Z = 30             # ... where same floor = within this much height
 
 DEFAULT_ZONES = ['codecay', 'sebilis', 'chardok',
                  'befallen', 'karnor', 'mistmoore', 'fearplane', 'cazicthule', 'charasis', 'permafrost',
@@ -91,7 +93,10 @@ for sn in ZONES:
                f"path_when_zone_idle, _condition, cond_value, animation, min_expansion, max_expansion) "
                f"SELECT {ARCHETYPE_GROUP}, {q}, {VERSION}, MIN(x), MIN(y), MIN(z), MIN(heading), 180, 30, MAX(pathgrid), "
                f"0, 0, 1, 0, -1, -1 FROM spawn2 WHERE zone = {q} AND version = 0 "
-               f"GROUP BY ROUND(x), ROUND(y), ROUND(z);")
+               f"GROUP BY ROUND(x), ROUND(y), ROUND(z) "
+               # players zone in on the entry point: keep it clear of spawns on the same floor
+               f"HAVING POW(MIN(x) - ({z['x']}), 2) + POW(MIN(y) - ({z['y']}), 2) > {ENTRY_CLEAR * ENTRY_CLEAR} "
+               f"OR ABS(MIN(z) - ({z['z']})) > {ENTRY_CLEAR_Z};")
     sql.append(f"INSERT INTO spawn2 (spawngroupID, zone, version, x, y, z, heading, respawntime, variance, pathgrid, "
                f"path_when_zone_idle, _condition, cond_value, animation, min_expansion, max_expansion) "
                f"VALUES ({CONTROLLER_GROUP}, {q}, {VERSION}, {z['x']}, {z['y']}, {z['z']}, 0, 30, 0, 0, 0, 0, 1, 0, -1, -1);")
