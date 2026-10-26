@@ -32,3 +32,7 @@ python build_final_sheet.py <eqemu_config.json> glamour_review.xlsx glamour_fina
 
 The SQL clears the whole 1200100-1200199 block before inserting, so a shorter list never leaves old
 vendors behind. Only the newest file in `sql/` matches the live vendors.
+
+Apply it with the vendor zone shut down (`#zoneshutdown zone ecommons`). The server saves a zone's live NPCs on
+shutdown and restores them on boot (`Zone:StateSavingOnShutdown`), so the SQL also clears that zone's saved
+state; with the zone still up, its next shutdown would save the old vendors again.

@@ -661,5 +661,76 @@
         "affix": "melee_crit_dmg_pct"
       }
     ]
+  },
+  "_looks": "per class: armor texture (3 plate, 2 chain, 1 leather, 0 cloth), chest_material for robes, and one RRGGBB tint for every piece of the set",
+  "looks": {
+    "1": {
+      "material": 3,
+      "color": "B41414"
+    },
+    "2": {
+      "material": 3,
+      "color": "DCDCDC"
+    },
+    "3": {
+      "material": 3,
+      "color": "D2A01E"
+    },
+    "4": {
+      "material": 2,
+      "color": "149614"
+    },
+    "5": {
+      "material": 3,
+      "color": "141414"
+    },
+    "6": {
+      "material": 1,
+      "color": "149614"
+    },
+    "7": {
+      "material": 1,
+      "color": "D2A01E"
+    },
+    "8": {
+      "material": 3,
+      "color": "781496"
+    },
+    "9": {
+      "material": 2,
+      "color": "141414"
+    },
+    "10": {
+      "material": 2,
+      "color": "1432B4"
+    },
+    "11": {
+      "material": 0,
+      "color": "141414",
+      "chest_material": 10
+    },
+    "12": {
+      "material": 0,
+      "color": "1432B4",
+      "chest_material": 10
+    },
+    "13": {
+      "material": 0,
+      "color": "B41414",
+      "chest_material": 10
+    },
+    "14": {
+      "material": 0,
+      "color": "781496",
+      "chest_material": 10
+    },
+    "15": {
+      "material": 1,
+      "color": "781496"
+    },
+    "16": {
+      "material": 2,
+      "color": "B41414"
+    }
   }
 }

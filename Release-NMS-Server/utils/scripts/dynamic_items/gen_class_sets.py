@@ -96,6 +96,11 @@ for item_id, cid, p in items:
             'classes': str(1 << (cid - 1))}
     for c in LOOK_COLS:
         over[c] = f'(SELECT `{c}` FROM (SELECT * FROM items WHERE id = {p["look_item"]}) look)'
+    # Class look: armor texture and one tint for the whole set (a robe for caster chests)
+    look = s.get('looks', {}).get(str(cid))
+    if look:
+        over['material'] = str(look.get('chest_material', look['material']) if p['name'] == 'Chestguard' else look['material'])
+        over['color'] = str(0xFF000000 | int(look['color'], 16))
     cols = ', '.join(f'`{c}`' for c in item_cols)
     vals = ', '.join(over.get(c, f'`{c}`') for c in item_cols)
     sql.append(f'INSERT INTO items ({cols}) SELECT {vals} FROM items WHERE id = {s["shell_item"]};')

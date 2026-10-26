@@ -239,7 +239,11 @@ if mode in ('sql', 'row'):
            f'DELETE FROM spawn2 WHERE spawngroupID BETWEEN {first_id} AND {last_id};',
            f'DELETE FROM spawnentry WHERE spawngroupID BETWEEN {first_id} AND {last_id};',
            f'DELETE FROM spawngroup WHERE id BETWEEN {first_id} AND {last_id};',
-           f'DELETE FROM npc_types WHERE id BETWEEN {first_id} AND {last_id};', '']
+           f'DELETE FROM npc_types WHERE id BETWEEN {first_id} AND {last_id};',
+           # Zone:StateSavingOnShutdown restores a zone's saved NPCs on boot, so old vendors would come back
+           # beside the new ones. Apply this with the zone shut down, or it saves them again on shutdown.
+           f"DELETE FROM zone_state_spawns WHERE instance_id = 0 AND zone_id = "
+           f"(SELECT zoneidnumber FROM zone WHERE short_name = '{zone}' AND version = 0 LIMIT 1);", '']
     for i, ((vname, ids), (x, y, z, h)) in enumerate(zip(vendors, spots)):
         vid = first_id + i
         overrides = {'id': str(vid), 'name': "'Glamour_Outfitter'", 'lastname': repr(vname[:32]),
