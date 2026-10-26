@@ -8,7 +8,7 @@ sub OfferStandardInstance {
 	my $text = plugin::val('$text');
 	my $zonesn = plugin::val('$zonesn');
 	my $dz_version = 254;
-	my $non_respawning_duration = 14 * 60 * 60; # 14 Hours
+	my $non_respawning_duration = 6 * 60 * 60; # 6 Hours
 	my $respawning_duration =  30 * 60; # 30 minutes
 	my $dz_lifetime = 7 * 24 * 60 * 60; # 7 Days
 	my ($expedition_name, $min_players, $max_players, $dz_zone, $x, $y, $z, $heading) = @_;

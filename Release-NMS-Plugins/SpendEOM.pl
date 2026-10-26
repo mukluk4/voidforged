@@ -1,39 +1,14 @@
-# Echo of Memory (EOM) Custom Currency Plugin
-# Alternate Currency ID: 6 (Maps to Item ID: 46779)
 
-sub SpendEOM {
-    my $client = shift;
-    my $amount = shift;
-    if ($client) {
-        return $client->RemoveAlternateCurrencyValue(6, $amount);
-    }
-    return 0;
+# Echo of Memory was removed (2026-10-25): services that cost Echoes now cost platinum, 1 Echo = 1,000pp.
+sub SpendPlatinum {
+    my ($client, $platinum) = @_;
+    return 0 unless $client;
+    return $client->TakeMoneyFromPP($platinum * 1000, 1);
 }
 
-sub GetEOM {
-    my $client = shift;
-    if ($client) {
-        return $client->GetAlternateCurrencyValue(6);
-    }
-    return 0;
-}
-
-sub EOMLink {
-    return quest::varlink(46779);
-}
-
-sub LootEOM {
-    my $client = shift;
-    my $amount = shift;
-    if ($client) {
-        $client->AddAlternateCurrencyValue(6, $amount);
-        
-        my $eom_link = plugin::EOMLink();
-        plugin::YellowText("You have received $amount $eom_link.", $client);
-        
-        # Display the high-impact on-screen marquee message across the middle of the screen
-        $client->SendMarqueeMessage(15, "YOU HAVE FOUND AN ECHO OF MEMORY!", 4000);
-    }
+sub HasPlatinum {
+    my ($client, $platinum) = @_;
+    return $client && $client->GetCarriedMoney() >= $platinum * 1000;
 }
 
 sub ApplyWorldWideBuff {

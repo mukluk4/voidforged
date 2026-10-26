@@ -67,82 +67,80 @@ sub EVENT_SAY {
     }
 
     elsif ($text=~/exotic payment/i) {
-        $response = "In exchange for five [Echo of Memory], I can enchant the entire world! Each should co-exist with over versions of this type of effect, and will last four hours. If the world is already enchanted in this way, purchasing additional enhancement will extend the duration of the current enchantment. Would you like to enhance the [Experience Gain], [Hit Points and Armor Class], [Combat Statistics], [Movement Speed], [Mana Regeneration], [Attack Speed], or [Health Regeneration]? Alternatively, for twenty-five Echoes, I can cast [all of these enchantments]!";
+        $response = "In exchange for 5,000 platinum, I can enchant the entire world! Each should co-exist with over versions of this type of effect, and will last four hours. If the world is already enchanted in this way, purchasing additional enhancement will extend the duration of the current enchantment. Would you like to enhance the [Experience Gain], [Hit Points and Armor Class], [Combat Statistics], [Movement Speed], [Mana Regeneration], [Attack Speed], or [Health Regeneration]? Alternatively, for 25,000 platinum, I can cast [all of these enchantments]!";
     }
 
     elsif ($text=~/experience gain/i) {        
         my $buff_id = 43002;
-        if (ApplyWorldWideBuff($buff_id)) {
+        if (plugin::SpendPlatinum($client, 5000) && plugin::ApplyWorldWideBuff($buff_id)) {
             $response = "Excellent! Your fellow adventurers will appreciate this!";
         } else {
-            $response = "You do not have enough [Echo of Memory] to afford that.";
+            $response = "You do not have enough platinum to afford that.";
         }
     }
     elsif ($text=~/hit points and armor class/i) {
         my $buff_id = 43003;
-        if (ApplyWorldWideBuff($buff_id)) {
+        if (plugin::SpendPlatinum($client, 5000) && plugin::ApplyWorldWideBuff($buff_id)) {
             $response = "Excellent! Your fellow adventurers will appreciate this!";
             $ww_buff = 1;
         } else {
-            $response = "You do not have enough [Echo of Memory] to afford that.";
+            $response = "You do not have enough platinum to afford that.";
         }
     }
     elsif ($text=~/combat statistics/i) {
         my $buff_id = 43004;
-        if (ApplyWorldWideBuff($buff_id)) {
+        if (plugin::SpendPlatinum($client, 5000) && plugin::ApplyWorldWideBuff($buff_id)) {
             $response = "Excellent! Your fellow adventurers will appreciate this!";
             $ww_buff = 1;
         } else {
-            $response = "You do not have enough [Echo of Memory] to afford that.";
+            $response = "You do not have enough platinum to afford that.";
         }
     }
     elsif ($text=~/movement speed/i) {
         my $buff_id = 43005;
-        if (ApplyWorldWideBuff($buff_id)) {
+        if (plugin::SpendPlatinum($client, 5000) && plugin::ApplyWorldWideBuff($buff_id)) {
             $response = "Excellent! Your fellow adventurers will appreciate this!";
             $ww_buff = 1;
         } else {
-            $response = "You do not have enough [Echo of Memory] to afford that.";
+            $response = "You do not have enough platinum to afford that.";
         }
     }
     elsif ($text=~/mana regeneration/i) {
         my $buff_id = 43006;
-        if (ApplyWorldWideBuff($buff_id)) {
+        if (plugin::SpendPlatinum($client, 5000) && plugin::ApplyWorldWideBuff($buff_id)) {
             $response = "Excellent! Your fellow adventurers will appreciate this!";
             $ww_buff = 1;
         } else {
-            $response = "You do not have enough [Echo of Memory] to afford that.";
+            $response = "You do not have enough platinum to afford that.";
         }
     }
     elsif ($text=~/attack speed/i) {
         my $buff_id = 43007;
-        if (ApplyWorldWideBuff($buff_id)) {
+        if (plugin::SpendPlatinum($client, 5000) && plugin::ApplyWorldWideBuff($buff_id)) {
             $response = "Excellent! Your fellow adventurers will appreciate this!";
             $ww_buff = 1;
         } else {
-            $response = "You do not have enough [Echo of Memory] to afford that.";
+            $response = "You do not have enough platinum to afford that.";
         }
     }
     elsif ($text=~/health regeneration/i) {
         my $buff_id = 43008;
-        if (ApplyWorldWideBuff($buff_id)) {
+        if (plugin::SpendPlatinum($client, 5000) && plugin::ApplyWorldWideBuff($buff_id)) {
             $response = "Excellent! Your fellow adventurers will appreciate this!";
             $ww_buff = 1;
         } else {
-            $response = "You do not have enough [Echo of Memory] to afford that.";
+            $response = "You do not have enough platinum to afford that.";
         }
     }
     elsif ($text=~/all of these enchantments/i) {
-        my $eom_avail = $client->GetAlternateCurrencyValue(6);
-        if ($eom_avail >= 25) {
-            $response = "Excellent! Your fellow adventurers will appreciate this!";
-            $client->SetAlternateCurrencyValue(6, $eom_avail - 25);
+        if (plugin::SpendPlatinum($client, 25000)) {
+            $response = "Excellent! Your fellow adventurers will appreciate this!";
             for my $value (43002 .. 43008) {
-                ApplyWorldWideBuff($value, 1);                
+                plugin::ApplyWorldWideBuff($value);                
             }
             $ww_buff = 1;
         } else {
-            $response = "You do not have enough [Echo of Memory] to afford that.";
+            $response = "You do not have enough platinum to afford that.";
         }
     }
 

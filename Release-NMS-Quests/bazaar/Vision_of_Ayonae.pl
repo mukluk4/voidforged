@@ -8,8 +8,8 @@ sub EVENT_SAY {
         return;
     }
    
-    my $remove_class_cost = 10;
-    my $reset_aa_cost = 5;
+    my $remove_class_cost = 10000; # platinum
+    my $reset_aa_cost = 5000; # platinum
     my $remove_class_lockout = 7;
 
     if ($text=~/hail/i) {   
@@ -223,18 +223,17 @@ sub EVENT_SAY {
             plugin::YellowText("You have a free AA Reset available. Would you like to [".quest::saylink("free_reset_aa", 1, "use it")."]?");
         }
        
-        if (plugin::GetEOM($client) >= $reset_aa_cost) {
-                plugin::YellowText("It will cost $reset_aa_cost Echo of Memory in order to reset your AA. Would you like to ["
+        if (plugin::HasPlatinum($client, $reset_aa_cost)) {
+                plugin::YellowText("It will cost $reset_aa_cost platinum in order to reset your AA. Would you like to ["
                                 .quest::saylink("confirm_reset_aa", 1, "Proceed")."]?");
         
         } else {
-                plugin::YellowText("It costs $reset_aa_cost Echo of Memory in order to reset your AA. You can obtain
-                                Echo of Memory through contributions to the sever or purchase from other players in the Bazaar.");
+                plugin::YellowText("It costs $reset_aa_cost platinum in order to reset your AA.");
         }  
     }
 
     if ($text eq 'confirm_reset_aa') {        
-        if (plugin::SpendEOM($client, $reset_aa_cost)) {
+        if (plugin::SpendPlatinum($client, $reset_aa_cost)) {
             plugin::YellowText("All of your AA have been refunded.");
             $client->ResetAA();
             plugin::CommonCharacterUpdate($client);
@@ -256,14 +255,13 @@ sub EVENT_SAY {
         }
 
         if (plugin::HasClass($client, $class_id)) {
-            if (plugin::GetEOM($client) >= $remove_class_cost) {
-                 plugin::YellowText("It will cost $remove_class_cost Echo of Memory in order to remove a class. Additionally, 
+            if (plugin::HasPlatinum($client, $remove_class_cost)) {
+                 plugin::YellowText("It will cost $remove_class_cost platinum in order to remove a class. Additionally, 
                                     there is a $remove_class_lockout-day cooldown after removing a class before you can remove another.
                                     Would you like to [".quest::saylink("proceed_$class_id", 1, "Proceed")."]?");
             
             } else {
-                 plugin::YellowText("It costs $remove_class_cost Echo of Memory in order to remove a class. You can obtain
-                                    Echo of Memory through contributions to the sever or purchase from other players in the Bazaar.");
+                 plugin::YellowText("It costs $remove_class_cost platinum in order to remove a class.");
             }           
         }
     }
@@ -278,7 +276,7 @@ sub EVENT_SAY {
         }
 
         if (!$client->HasExpeditionLockout("Class Removal Lockout", "") && plugin::HasClass($client, $class_id)) {
-            if (plugin::SpendEOM($client, $remove_class_cost)) {
+            if (plugin::SpendPlatinum($client, $remove_class_cost)) {
                 plugin::RemoveClass($class_id, $client);
                 $client->AddExpeditionLockout("Class Removal Lockout", "", $remove_class_lockout * 24 * 60 * 60);
             }
