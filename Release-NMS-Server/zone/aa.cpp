@@ -563,6 +563,15 @@ void Client::ResetAA()
 			continue;
 		}
 
+		if (slot_id >= MAX_PP_AA_ARRAY) {
+			LogError(
+				"ResetAA for [{}] exceeded the player profile AA array capacity of [{}], truncating",
+				GetCleanName(),
+				MAX_PP_AA_ARRAY
+			);
+			break;
+		}
+
 		m_pp.aa_array[slot_id].AA      = rank_value.first;
 		m_pp.aa_array[slot_id].value   = rank_value.second.first;
 		m_pp.aa_array[slot_id].charges = rank_value.second.second;
@@ -1098,15 +1107,13 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 			case 586:
 			case 587:
 			case 588:
-			case 589:
+			// 589 (Destruction), 5003 (Frantic Infusion), 7019 (Cataclysm) are buyable burns
 			case 5000:
 			case 5002:
-			case 5003:
 			case 5004:
 			case 7016:
 			case 7017:
 			case 7018:
-			case 7019:
 				aai->grant_only = 1;
 				aai->cost = 0;
 				aai->total_cost = 0;
@@ -1146,6 +1153,15 @@ void Client::SendAlternateAdvancementPoints() {
 		if(ranks) {
 			AA::Rank *rank = aa.second->GetRankByPointsSpent(ranks);
 			if(rank) {
+				if (i >= MAX_PP_AA_ARRAY) {
+					LogError(
+						"SendAlternateAdvancementPoints for [{}] exceeded the AA table capacity of [{}], truncating",
+						GetCleanName(),
+						MAX_PP_AA_ARRAY
+					);
+					break;
+				}
+
 				aa2->aa_list[i].AA = rank->id;
 				aa2->aa_list[i].value = rank->total_cost;
 				aa2->aa_list[i].charges = charges;
@@ -1672,6 +1688,12 @@ void Client::ActivateAlternateAdvancementAbility(int rank_id, int target_id) {
 
 		target_id = GetSpellImpliedTargetID(rank->spell, target_id);
 
+		// Directional cones fire from the caster's facing and ignore the spell target.
+		// Resolve missing/unresolvable targets to the caster so shared casting checks don't reject them.
+		if (spells[rank->spell].target_type == ST_Directional && !entity_list.GetMob(target_id)) {
+			target_id = GetID();
+		}
+
 		if (RuleB(Custom, MulticlassingEnabled) || (HasClass(Class::Bard) && IsCasting() && spells[rank->spell].cast_time == 0)) {
 			if (!DoCastingChecksOnCaster(rank->spell, EQ::spells::CastingSlot::AltAbility)) {
 				return;
@@ -1813,6 +1835,15 @@ bool ZoneDatabase::LoadAlternateAdvancement(Client *c) {
 		rank = ability->GetRankByPointsSpent(aa_value);
 
 		if (c->CanUseAlternateAdvancementRank(rank)) {
+			if (slot_id >= MAX_PP_AA_ARRAY) {
+				LogError(
+					"Character [{}] owns more AA ranks than the player profile can hold, truncating at [{}] entries",
+					c->GetCleanName(),
+					MAX_PP_AA_ARRAY
+				);
+				break;
+			}
+
 			c->GetPP().aa_array[slot_id].AA      = aa_id;
 			c->GetPP().aa_array[slot_id].value   = aa_value;
 			c->GetPP().aa_array[slot_id].charges = charges;
@@ -1943,7 +1974,7 @@ bool Mob::CanUseAlternateAdvancementRank(AA::Rank *rank)
 		}
 
 		// Restrict Fury of Magic rank 6+ to only be available to Pure Casters
-		if (rank->base_ability->first_rank_id == aaFuryofMagic && rank->id > 772 && rank->id <= 4751) {
+		if (rank->base_ability->first_rank_id == aaFuryofMagic && rank->id > 772) {
 			return (GetClassesBits() & 15906);
 		}
 

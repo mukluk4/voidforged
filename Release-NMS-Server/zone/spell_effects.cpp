@@ -7436,6 +7436,10 @@ int64 Mob::GetFocusEffect(focusType type, uint16 spell_id, Mob *caster, bool fro
 
 		int32 Total3 = 0;
 
+		bool sum_aa_focus = RuleB(Custom, AAFocusEffectsStack);
+		bool is_dmg_focus = (type == focusImprovedDamage || type == focusImprovedDamage2 ||
+			type == focusFcDamagePctCrit || type == focusFcDamageAmtCrit);
+
 		for (const auto &aa : aa_ranks) {
 			auto ability_rank = zone->GetAlternateAdvancementAbilityAndRank(aa.first, aa.second.first);
 			auto ability = ability_rank.first;
@@ -7454,11 +7458,26 @@ int64 Mob::GetFocusEffect(focusType type, uint16 spell_id, Mob *caster, bool fro
 			}
 
 			Total3 = CalcAAFocus(type, *rank, spell_id);
-			if (Total3 > 0 && realTotal3 >= 0 && Total3 > realTotal3) {
+			if (sum_aa_focus) {
+				realTotal3 += Total3;
+			}
+			else if (Total3 > 0 && realTotal3 >= 0 && Total3 > realTotal3) {
 				realTotal3 = Total3;
 			}
 			else if (Total3 < 0 && Total3 < realTotal3) {
 				realTotal3 = Total3;
+			}
+		}
+
+		if (sum_aa_focus && is_dmg_focus) {
+			int32 aa_focus_cap = RuleI(Custom, MaxAACritDmgFocus);
+			if (aa_focus_cap > 0) {
+				if (realTotal3 > aa_focus_cap) {
+					realTotal3 = aa_focus_cap;
+				}
+				else if (realTotal3 < -aa_focus_cap) {
+					realTotal3 = -aa_focus_cap;
+				}
 			}
 		}
 	}
@@ -11176,6 +11195,27 @@ void Mob::ApplySpellEffectIllusion(int32 spell_id, Mob *caster, int buffslot, in
 	}
 	// Racial Illusions
 	else {
+		// Beastlord Warder Form (Bestial Alignment): mirror the beastlord pet chart
+		// (pets_beastlord_data) for each recipient's own race. Falls back to the
+		// generic wolf illusion below if the race has no valid chart entry.
+		if (spell_id == 30738 || spell_id == 16443) {
+			auto warder = content_db.GetBeastlordPetData(this->GetBaseRace());
+			bool valid  = (warder.race_id != Race::Wolf || this->GetBaseRace() == Race::Wolf);
+			if (valid) {
+				SendIllusionPacket(
+					AppearanceStruct{
+						.face           = static_cast<uint8>(warder.face),
+						.gender_id      = static_cast<uint8>(warder.gender),
+						.helmet_texture = static_cast<uint8>(warder.helm_texture),
+						.race_id        = static_cast<uint16>(warder.race_id),
+						.size           = this->GetBaseSize() * warder.size_modifier,
+						.texture        = static_cast<uint8>(warder.texture),
+					}
+				);
+				return;
+			}
+		}
+
 		auto gender_id = (
 			max > 0 &&
 			(

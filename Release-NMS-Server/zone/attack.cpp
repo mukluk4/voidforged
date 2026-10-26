@@ -237,7 +237,7 @@ int Mob::GetTotalToHit(EQ::skills::SkillType skill, int chance_mod)
 		aabonuses.HitChanceEffect[skill] +
 		spellbonuses.HitChanceEffect[skill];
 
-	if (skill == EQ::skills::SkillArchery) {
+	if (skill == EQ::skills::SkillArchery || skill == EQ::skills::SkillThrowing) {
 		hit_bonus += spellbonuses.increase_archery + aabonuses.increase_archery + itembonuses.increase_archery;
 		hit_bonus -= hit_bonus * RuleR(Combat, ArcheryHitPenalty);
 	}
@@ -5749,6 +5749,7 @@ void Mob::TryPetCriticalHit(Mob *defender, DamageHitInfo &hit)
 	if (critChance > 0) {
 		if (zone->random.Roll(critChance)) {
 			critMod += GetCritDmgMod(hit.skill, owner);
+			critMod = std::max(critMod, 100);
 			hit.damage_done += 5;
 			hit.damage_done = (hit.damage_done * critMod) / 100;
 
@@ -5774,9 +5775,7 @@ int Mob::GetBaseCriticalHitChance(EQ::skills::SkillType skill) {
 
     if ((HasClass(Class::Warrior) || HasClass(Class::Berserker)) && GetLevel() >= 12) {
         innate_crit = true;
-    } else if (HasClass(Class::Ranger) && GetLevel() >= 12 && skill == EQ::skills::SkillArchery) {
-        innate_crit = true;
-    } else if (HasClass(Class::Rogue) && GetLevel() >= 12 && skill == EQ::skills::SkillThrowing) {
+    } else if ((HasClass(Class::Ranger) || HasClass(Class::Rogue)) && GetLevel() >= 12) {
         innate_crit = true;
     }
 
@@ -6830,7 +6829,7 @@ void Mob::CommonOutgoingHitSuccess(Mob* defender, DamageHitInfo &hit, ExtraAttac
 
 	// BER weren't parsing the halving
 	if (hit.skill == EQ::skills::SkillArchery ||
-		(hit.skill == EQ::skills::SkillThrowing && GetClass() != Class::Berserker))
+		(hit.skill == EQ::skills::SkillThrowing && !HasClass(Class::Berserker)))
 		hit.damage_done /= 2;
 
 	if (hit.damage_done < 1)
@@ -6868,6 +6867,12 @@ void Mob::CommonOutgoingHitSuccess(Mob* defender, DamageHitInfo &hit, ExtraAttac
 			hit.damage_done = DoDamageCaps(hit.damage_done);
 		}
 		hit.damage_done += hit.damage_done * bonus / 100;
+	}
+	else if (hit.skill == EQ::skills::SkillThrowing) {
+		int headshot = TryHeadShot(defender, hit.skill);
+		if (headshot > 0) {
+			hit.damage_done = headshot;
+		}
 	}
 
 	int extra_mincap = 0;

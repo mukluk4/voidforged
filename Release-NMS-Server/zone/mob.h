@@ -371,6 +371,7 @@ public:
 	int GetSharedCriticalSpellChance();
 	int GetSharedSpellCritDmgIncrease();
 	int GetSharedSpellCritDmgIncNoStack();
+	int GetAACritDmgNoStackPool();
 	int GetSharedCriticalDoTChance();
 	int GetSharedDotCritDmgIncrease();
 	int GetSharedCriticalHealChance();

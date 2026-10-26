@@ -1290,6 +1290,12 @@ RULE_BOOL(Custom,   EnableAccountAltCurrency, 				true, "Enable account-based al
 // Hybrids: auto-attack and auto-fire keep swinging while a (non-bard) spell is being cast
 RULE_BOOL(Custom,   AllowAttackWhileCasting,				true, "Melee auto-attack and ranged/throwing attacks continue while casting a spell.")
 
+// AA spell damage stacking. Ported from Triptych.
+RULE_BOOL(Custom,   AAFocusEffectsStack,					true, "AA focus effects (damage, crit damage, etc.) sum additively across all AA lines instead of using only the highest single source")
+RULE_BOOL(Custom,   AACritDmgNoStackComponentsStack,		true, "AA SPA 294 critical spell damage components sum additively across all AA lines instead of using only the highest single source")
+RULE_BOOL(Custom,   DoTCritsShareNoStackPool,				true, "DoT critical damage ratio also receives the capped AA critical damage pool from SPA 294")
+RULE_INT(Custom,    MaxAACritDmgFocus,						500, "Maximum combined AA critical damage focus value in percent from stacked AA sources, 0 to disable cap")
+
 // Dynamic item percent lines: caps on the character's total from all items and set bonuses
 RULE_INT(Custom,    DynamicItemPctCap,						100, "Cap on each dynamic item percent total (a skill %, ability damage %, spell type damage %, heal %, bard instrument %, crit damage %). 0 = no cap.")
 RULE_INT(Custom,    DynamicItemCritChancePctCap,			50, "Cap on each dynamic item critical hit chance total (spell, DoT, heal, HoT, melee, archery). 0 = no cap.")

@@ -90,9 +90,9 @@ int Mob::GetBaseSkillDamage(EQ::skills::SkillType skill, Mob *target)
 			}
 
 			if (RuleB(Character, ItemExtraSkillDamageCalcAsPercent) && GetSkillDmgAmt(skill) > 0) {
-				return static_cast<int>(ac_bonus + skill_bonus) * std::abs(GetSkillDmgAmt(skill) / 100);
+				return (base + static_cast<int>(ac_bonus + skill_bonus)) * std::abs(GetSkillDmgAmt(skill) / 100);
 			}
-			return static_cast<int>(ac_bonus + skill_bonus);
+			return base + static_cast<int>(ac_bonus + skill_bonus);
 		}
 
 		case EQ::skills::SkillKick:
@@ -112,9 +112,9 @@ int Mob::GetBaseSkillDamage(EQ::skills::SkillType skill, Mob *target)
 			if (skill_level >= 175) base++;
 
 			if (RuleB(Character, ItemExtraSkillDamageCalcAsPercent) && GetSkillDmgAmt(skill) > 0) {
-				return static_cast<int>(ac_bonus + skill_bonus) * std::abs(GetSkillDmgAmt(skill) / 100);
+				return (base + static_cast<int>(ac_bonus + skill_bonus)) * std::abs(GetSkillDmgAmt(skill) / 100);
 			}
-			return static_cast<int>(ac_bonus + skill_bonus);
+			return base + static_cast<int>(ac_bonus + skill_bonus);
 		}
 
 		case EQ::skills::SkillBash: {
@@ -145,9 +145,9 @@ int Mob::GetBaseSkillDamage(EQ::skills::SkillType skill, Mob *target)
 			}
 
 			if (RuleB(Character, ItemExtraSkillDamageCalcAsPercent) && GetSkillDmgAmt(skill) > 0) {
-				return static_cast<int>(ac_bonus + skill_bonus) * std::abs(GetSkillDmgAmt(skill) / 100);
+				return (base + static_cast<int>(ac_bonus + skill_bonus)) * std::abs(GetSkillDmgAmt(skill) / 100);
 			}
-			return static_cast<int>(ac_bonus + skill_bonus);
+			return base + static_cast<int>(ac_bonus + skill_bonus);
 		}
 
 		case EQ::skills::SkillBackstab: {
@@ -2672,7 +2672,7 @@ int Mob::TryHeadShot(Mob *defender, EQ::skills::SkillType skillInUse)
 	if (
 		defender &&
 		!defender->IsOfClientBot() &&
-		skillInUse == EQ::skills::SkillArchery &&
+		(skillInUse == EQ::skills::SkillArchery || skillInUse == EQ::skills::SkillThrowing) &&
 		GetTarget() == defender &&
 		(defender->GetBodyType() == BodyType::Humanoid || !RuleB(Combat, HeadshotOnlyHumanoids)) &&
 		!defender->GetSpecialAbility(SpecialAbility::HeadshotImmunity)
