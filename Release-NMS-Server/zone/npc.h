@@ -224,6 +224,7 @@ public:
 	void AddLootTable(uint32 loottable_id, bool is_global = false);
 	void AddLootDropTable(uint32 lootdrop_id, uint8 drop_limit, uint8 min_drop);
 	void CheckGlobalLootTables();
+	void RollIndependentLoot(LootItems &out); // /nmsloot: roll this NPC's tables into out without touching its own loot
 	void RemoveItemByPercent(float percent, int min_delete = 1, int max_delete = -1);
 	void RemoveItem(uint32 item_id, uint16 quantity = 0, uint16 slot = 0);
 	void CheckTrivialMinMaxLevelDrop(Mob *killer);
@@ -727,6 +728,7 @@ protected:
 	uint32    m_loot_gold;
 	uint32    m_loot_platinum;
 	LootItems m_loot_items;
+	LootItems *m_loot_item_sink = nullptr; // set only during RollIndependentLoot
 
 	// zone state
 	bool m_resumed_from_zone_suspend = false;

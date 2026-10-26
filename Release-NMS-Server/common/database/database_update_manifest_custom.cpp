@@ -2311,6 +2311,256 @@ ALTER TABLE `armor_set_bonuses` ADD COLUMN IF NOT EXISTS `spell_type` TINYINT(3)
 		.content_schema_update = true,
 	},
 
+
+	// ------------------------------------------------------------------
+	// Nautilus Vault, ported from Triptych (their custom v93-v96, itself a port of
+	// Rockin-Vik/NMS-Release). v32 storage table, v33 per-instance item state
+	// (custom_data keeps dynamic item seeds), v34 the Nautilus Vault key item
+	// (clone of 9011010 -> 9011009), v35 the feature rule.
+	// Code: zone/nms_vault.cpp, zone/gm_commands/vault.cpp, common/nms_vault_item.h.
+	// Client: the installed 3.5 MB dinput8.dll (Dimensional Vault window).
+	// ------------------------------------------------------------------
+	ManifestEntry{
+		.version = 32,
+		.description = "2026_10_02_character_nms_vault",
+		.check = "SHOW TABLES LIKE 'character_nms_vault'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+CREATE TABLE IF NOT EXISTS character_nms_vault (
+    character_id INT UNSIGNED NOT NULL,
+    slot INT NOT NULL,
+    bag_slot INT NOT NULL DEFAULT 0,
+    item_id INT UNSIGNED NOT NULL,
+    charges SMALLINT NOT NULL DEFAULT 1,
+    aug1 INT UNSIGNED NOT NULL DEFAULT 0,
+    aug2 INT UNSIGNED NOT NULL DEFAULT 0,
+    aug3 INT UNSIGNED NOT NULL DEFAULT 0,
+    aug4 INT UNSIGNED NOT NULL DEFAULT 0,
+    aug5 INT UNSIGNED NOT NULL DEFAULT 0,
+    aug6 INT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (character_id, slot, bag_slot),
+    KEY idx_character_nms_vault_slot (character_id, slot)
+);
+)",
+		.content_schema_update = false,
+	},
+	ManifestEntry{
+		.version = 33,
+		.description = "2026_10_02_character_nms_vault_instance_state",
+		// Sentinels on ALL six columns, not just the first: a check that only looked at
+		// instnodrop would mark v94 applied after a partial ALTER and never retry, and the
+		// vault's own EnsureTables() column count would then keep the vault disabled
+		// forever.
+		.check = "SELECT COUNT(*) AS n FROM information_schema.columns "
+				 "WHERE table_schema = DATABASE() AND table_name = 'character_nms_vault' "
+				 "AND column_name IN ('instnodrop', 'custom_data', 'ornament_icon', "
+				 "'ornament_idfile', 'ornament_hero_model', 'guid') HAVING COUNT(*) = 6",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+ALTER TABLE character_nms_vault
+    ADD COLUMN instnodrop TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER aug6,
+    ADD COLUMN custom_data TEXT DEFAULT NULL AFTER instnodrop,
+    ADD COLUMN ornament_icon INT UNSIGNED NOT NULL DEFAULT 0 AFTER custom_data,
+    ADD COLUMN ornament_idfile INT UNSIGNED NOT NULL DEFAULT 0 AFTER ornament_icon,
+    ADD COLUMN ornament_hero_model INT UNSIGNED NOT NULL DEFAULT 0 AFTER ornament_idfile,
+    ADD COLUMN guid BIGINT UNSIGNED NOT NULL DEFAULT 0 AFTER ornament_hero_model;
+)",
+		.content_schema_update = false,
+	},
+	ManifestEntry{
+		.version = 34,
+		.description = "2026_10_02_armarium_item",
+		.check = "SELECT id FROM items WHERE id = 9011009 AND Name = 'Nautilus Vault' AND itemclass = 0 AND itemtype = 33 AND bagslots = 0 AND bagtype = 0 AND book = 0 AND slots = 0 AND nodrop = 0 AND norent = 1 AND notransfer = 1 AND fvnodrop = 1 AND attuneable = 0 AND loregroup = -1 AND clicktype = 1 AND clickeffect = 1 AND clickname = 'Open Nautilus Vault' AND casttime = 0 AND maxcharges = -1",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+-- Nautilus Vault: bound vault key (VAULTDATA). Identity:
+-- id 9011009, remainder 11009; runtime matching requires id >= 9011009 so
+-- stock items sharing the remainder can never count as the vault key.
+-- Cloned from Satchel of the Hero (9011010) through a temporary table so every live
+-- items column is copied. Then converted to a non-container key: right-click must
+-- fire the click, not open a bag. clickeffect 1 is a client dummy; the zone
+-- intercepts the click and never casts that spell. nodrop = 0 is NO DROP in this
+-- schema. norent = 1 is rentable: item_data.h treats NoRent == 0 as deleted after
+-- a long camp. Empty CREATE TEMPORARY TABLE ... AS SELECT is not an SQL error, so
+-- if both 9011010 and 9011009 are missing this INSERT of NULL into a NOT NULL
+-- column fails and custom_version is not stamped. UPDATE after INSERT IGNORE
+-- repairs a previously inserted row whose fields drifted (including norent = 0).
+DROP TEMPORARY TABLE IF EXISTS nms_armarium_need_source;
+CREATE TEMPORARY TABLE nms_armarium_need_source (must_exist TINYINT NOT NULL);
+INSERT INTO nms_armarium_need_source (must_exist)
+VALUES (CASE
+    WHEN EXISTS (SELECT 1 FROM items WHERE id = 9011010) THEN 1
+    WHEN EXISTS (SELECT 1 FROM items WHERE id = 9011009) THEN 1
+    ELSE NULL
+END);
+DROP TEMPORARY TABLE IF EXISTS nms_armarium_need_source;
+DROP TEMPORARY TABLE IF EXISTS nms_armarium_tmp;
+CREATE TEMPORARY TABLE nms_armarium_tmp AS SELECT * FROM items WHERE id = 9011010;
+UPDATE nms_armarium_tmp
+SET id = 9011009,
+    Name = 'Nautilus Vault',
+    lore = 'Your Nautilus Vault. Right-click to open storage, bank, merchant, Proc Locker.',
+    comment = 'NMS Nautilus Vault opener (custom v34)',
+    itemclass = 0,
+    itemtype = 33,
+    bagsize = 0,
+    bagslots = 0,
+    bagtype = 0,
+    bagwr = 0,
+    book = 0,
+    nodrop = 0,
+    norent = 1,
+    notransfer = 1,
+    fvnodrop = 1,
+    loregroup = -1,
+    magic = 1,
+    slots = 0,
+    weight = 1,
+    size = 1,
+    price = 0,
+    sellrate = 0,
+    stackable = 0,
+    potionbelt = 0,
+    attuneable = 0,
+    clicktype = 1,
+    clickeffect = 1,
+    clicklevel = 0,
+    clicklevel2 = 0,
+    clickname = 'Open Nautilus Vault',
+    casttime = 0,
+    casttime_ = 0,
+    recastdelay = 0,
+    recasttype = 0,
+    maxcharges = -1;
+INSERT IGNORE INTO items SELECT * FROM nms_armarium_tmp;
+UPDATE items
+SET Name = 'Nautilus Vault',
+    lore = 'Your Nautilus Vault. Right-click to open storage, bank, merchant, Proc Locker.',
+    comment = 'NMS Nautilus Vault opener (custom v34)',
+    itemclass = 0,
+    itemtype = 33,
+    bagsize = 0,
+    bagslots = 0,
+    bagtype = 0,
+    bagwr = 0,
+    book = 0,
+    nodrop = 0,
+    norent = 1,
+    notransfer = 1,
+    fvnodrop = 1,
+    loregroup = -1,
+    magic = 1,
+    slots = 0,
+    weight = 1,
+    size = 1,
+    price = 0,
+    sellrate = 0,
+    stackable = 0,
+    potionbelt = 0,
+    attuneable = 0,
+    clicktype = 1,
+    clickeffect = 1,
+    clicklevel = 0,
+    clicklevel2 = 0,
+    clickname = 'Open Nautilus Vault',
+    casttime = 0,
+    casttime_ = 0,
+    recastdelay = 0,
+    recasttype = 0,
+    maxcharges = -1
+WHERE id = 9011009;
+DROP TEMPORARY TABLE IF EXISTS nms_armarium_tmp;
+)",
+		.content_schema_update = true,
+	},
+	ManifestEntry{
+		.version = 35,
+		.description = "2026_10_02_nautilus_vault_rule_on",
+		.check = R"(
+SELECT rv.rule_value
+FROM rule_values rv
+WHERE rv.rule_name = 'Custom:NautilusVault'
+  AND rv.rule_value IN ('true', '1')
+  AND rv.ruleset_id = COALESCE(
+    (
+      SELECT rs.ruleset_id
+      FROM rule_sets rs
+      INNER JOIN variables v ON v.varname = 'RuleSet' AND v.value = rs.`name`
+      LIMIT 1
+    ),
+    (
+      SELECT rs.ruleset_id
+      FROM rule_sets rs
+      WHERE rs.`name` = 'default'
+      LIMIT 1
+    ),
+    1
+  )
+)",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+-- Nautilus Vault. Compiled default is now true. Live servers read
+-- rule_values, so a leftover false/0 row would keep the vault sealed. Only
+-- rewrite false/0; a deliberate true is not stomped. INSERT if no row exists.
+UPDATE rule_values
+SET rule_value = 'true',
+    notes = 'Enable the Nautilus Vault (#vault_*) storage, Proc Locker, clicky autoload, vault bank/merchant, and the Nautilus Vault inventory key. Off = no vault commands, grant, or combat hooks.'
+WHERE rule_name = 'Custom:NautilusVault'
+  AND rule_value IN ('false', '0');
+INSERT INTO rule_values (ruleset_id, rule_name, rule_value, notes)
+SELECT 1,
+       'Custom:NautilusVault',
+       'true',
+       'Enable the Nautilus Vault (#vault_*) storage, Proc Locker, clicky autoload, vault bank/merchant, and the Nautilus Vault inventory key. Off = no vault commands, grant, or combat hooks.'
+FROM DUAL
+WHERE NOT EXISTS (
+    SELECT 1 FROM rule_values WHERE rule_name = 'Custom:NautilusVault'
+);
+)",
+		.content_schema_update = false,
+	},
+
+	// /nmsloot personal loot offers (Rockin-Vik/NMS-Release v36-v40 folded into one table).
+	// Code: zone/nms_loot_offers.cpp. Rule Custom:NmsLootOffers (default off).
+	ManifestEntry{
+		.version = 36,
+		.description = "2026_10_24_character_nms_loot_offers",
+		.check = "SHOW TABLES LIKE 'character_nms_loot_offers'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+CREATE TABLE IF NOT EXISTS character_nms_loot_offers (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    character_id INT UNSIGNED NOT NULL,
+    zone_id INT UNSIGNED NOT NULL DEFAULT 0,
+    instance_id INT UNSIGNED NOT NULL DEFAULT 0,
+    corpse_id INT UNSIGNED NOT NULL DEFAULT 0,
+    corpse_serial BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    item_id INT UNSIGNED NOT NULL,
+    icon INT UNSIGNED NOT NULL DEFAULT 0,
+    charges SMALLINT NOT NULL DEFAULT 1,
+    bonus TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    name VARCHAR(64) NOT NULL DEFAULT '',
+    aug1 INT UNSIGNED NOT NULL DEFAULT 0,
+    aug2 INT UNSIGNED NOT NULL DEFAULT 0,
+    aug3 INT UNSIGNED NOT NULL DEFAULT 0,
+    aug4 INT UNSIGNED NOT NULL DEFAULT 0,
+    aug5 INT UNSIGNED NOT NULL DEFAULT 0,
+    aug6 INT UNSIGNED NOT NULL DEFAULT 0,
+    passed TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    passed_from VARCHAR(64) NOT NULL DEFAULT '',
+    expires_at TIMESTAMP NOT NULL,
+    PRIMARY KEY (id),
+    KEY idx_character_nms_loot_offers_char (character_id, zone_id, expires_at)
+);
+)",
+		.content_schema_update = false,
+	},
+
 	// Used for testing
 	//	ManifestEntry{
 	//		.version = 9229,

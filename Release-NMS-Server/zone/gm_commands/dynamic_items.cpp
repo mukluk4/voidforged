@@ -692,6 +692,42 @@ namespace {
 		int32 sets    = 0;
 	};
 
+	// The cap a worn total is held to in game, or 0 when this table has none to show. Base stats and resists
+	// are left out: their caps count the character's own stats too, which this table doesn't.
+	int32 WornCap(Client *c, EQ::eDynamicAffixID affix)
+	{
+		Mob *m = c; // the regen and ATK cap helpers are public on Mob
+		switch (affix) {
+			case EQ::AFFIX_SPELL_CRIT_CHANCE_PCT:
+			case EQ::AFFIX_DOT_CRIT_CHANCE_PCT:
+			case EQ::AFFIX_HEAL_CRIT_CHANCE_PCT:
+			case EQ::AFFIX_HOT_CRIT_CHANCE_PCT:
+			case EQ::AFFIX_MELEE_CRIT_CHANCE_PCT:
+			case EQ::AFFIX_ARCHERY_CRIT_CHANCE_PCT: return RuleI(Custom, DynamicItemCritChancePctCap);
+			case EQ::AFFIX_SPELL_DAMAGE:    return RuleI(Character, ItemSpellDmgCap);
+			case EQ::AFFIX_HEAL_AMOUNT:     return RuleI(Character, ItemHealAmtCap);
+			case EQ::AFFIX_ATTACK:          return m->CalcItemATKCap();
+			case EQ::AFFIX_HP_REGEN:        return static_cast<int32>(m->CalcHPRegenCap());
+			case EQ::AFFIX_MANA_REGEN:      return static_cast<int32>(m->CalcManaRegenCap());
+			case EQ::AFFIX_ENDURANCE_REGEN: return static_cast<int32>(m->CalcEnduranceRegenCap());
+			case EQ::AFFIX_COMBAT_EFFECTS:  return RuleI(Character, ItemCombatEffectsCap);
+			case EQ::AFFIX_SPELL_SHIELD:    return RuleI(Character, ItemSpellShieldingCap);
+			case EQ::AFFIX_SHIELDING:       return RuleI(Character, ItemShieldingCap);
+			case EQ::AFFIX_DAMAGE_SHIELD:   return RuleI(Character, ItemDamageShieldCap);
+			case EQ::AFFIX_DOT_SHIELDING:   return RuleI(Character, ItemDoTShieldingCap);
+			case EQ::AFFIX_DS_MITIGATION:   return RuleI(Character, ItemDSMitigationCap);
+			case EQ::AFFIX_AVOIDANCE:       return RuleI(Character, ItemAvoidanceCap);
+			case EQ::AFFIX_ACCURACY:        return RuleI(Character, ItemAccuracyCap);
+			case EQ::AFFIX_STUN_RESIST:     return RuleI(Character, ItemStunResistCap);
+			case EQ::AFFIX_STRIKE_THROUGH:  return RuleI(Character, ItemStrikethroughCap);
+			default: {
+				bool is_pct = false;
+				TableLabel(affix, is_pct);
+				return is_pct ? RuleI(Custom, DynamicItemPctCap) : 0;
+			}
+		}
+	}
+
 	// An item's stats as the affixes they match (the same fields Mob::AddItemBonuses reads)
 	void AddItemStats(const EQ::ItemData *item, std::map<EQ::eDynamicAffixID, WornTotals> &totals, std::map<std::string, WornTotals> &other)
 	{
@@ -1044,11 +1080,17 @@ namespace {
 		auto cell = [](int32 value, const char *unit) {
 			return DialogueWindow::TableCell(value ? fmt::format("{}{}", value, unit) : "-");
 		};
-		auto row = [&](const std::string &name, const WornTotals &v, bool is_pct) {
-			const auto unit = is_pct ? "%" : "";
+		// A total over its cap shows the cap beside it: only the capped amount counts in game
+		auto row = [&](const std::string &name, const WornTotals &v, bool is_pct, int32 cap = 0) {
+			const auto  unit  = is_pct ? "%" : "";
+			const int32 total = v.dynamic + v.items + v.sets;
+			std::string shown = DialogueWindow::ColorMessage("gold", fmt::format("{}{}", total, unit));
+			if (cap > 0 && total > cap) {
+				shown += " " + DialogueWindow::ColorMessage("red", fmt::format("(cap {}{})", cap, unit));
+			}
 			return DialogueWindow::TableRow(
 				DialogueWindow::TableCell(name) + cell(v.dynamic, unit) + cell(v.items, unit) + cell(v.sets, unit) +
-				DialogueWindow::TableCell(DialogueWindow::ColorMessage("gold", fmt::format("{}{}", v.dynamic + v.items + v.sets, unit)))
+				DialogueWindow::TableCell(shown)
 			);
 		};
 
@@ -1056,7 +1098,7 @@ namespace {
 		for (const auto &[affix, v] : totals) {
 			bool       is_pct = false;
 			const auto name   = TableLabel(affix, is_pct);
-			rows.push_back(row(name, v, is_pct));
+			rows.push_back(row(name, v, is_pct, WornCap(c, affix)));
 
 			// Heroic Charisma has no affix of its own: list it with the other heroics
 			if (affix == EQ::AFFIX_HEROIC_WIS && other.contains("Heroic Charisma")) {
@@ -1089,7 +1131,7 @@ namespace {
 		) + DialogueWindow::Break() + set_lines;
 		const std::string header = DialogueWindow::TableCell("Stat") + DialogueWindow::TableCell("Dynamic") +
 			DialogueWindow::TableCell("Items") + DialogueWindow::TableCell("Sets") + DialogueWindow::TableCell("Total");
-		const std::string bottom = "Items = other worn items and all augments. Gear only, not buffs or AAs; stat caps still apply in game.";
+		const std::string bottom = "Items = other worn items and all augments. Gear only, not buffs or AAs. A red (cap) means only that much counts; base stat and resist caps also apply in game.";
 
 		SendPagedTable(c, "Worn Totals", top, header, rows, bottom, page, "#dyninfo worn");
 	}

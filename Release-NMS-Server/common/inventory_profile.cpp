@@ -261,8 +261,18 @@ int16 EQ::InventoryProfile::PushCursor(const ItemInstance &inst) {
 	return invslot::slotCursor;
 }
 
+int16 EQ::InventoryProfile::PushCursorFront(const ItemInstance &inst) {
+	m_cursor.push_front(inst.Clone());
+	return invslot::slotCursor;
+}
+
 EQ::ItemInstance* EQ::InventoryProfile::GetCursorItem() {
 	return m_cursor.peek_front();
+}
+
+EQ::ItemInstance* EQ::InventoryProfile::PopCursorBack()
+{
+	return m_cursor.pop_back();
 }
 
 // Swap items in inventory

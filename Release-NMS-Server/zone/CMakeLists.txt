@@ -101,6 +101,8 @@ SET(zone_sources
     tasks.cpp
     titles.cpp
     nms_waypoints.cpp
+    nms_vault.cpp
+    nms_loot_offers.cpp
     tradeskills.cpp
     trading.cpp
     trap.cpp
@@ -147,6 +149,8 @@ SET(zone_headers
     doors.h
     dialogue_window.h
     dynamic_items.h
+    nms_vault.h
+    nms_loot_offers.h
     dynamic_zone.h
     embparser.h
     embperl.h
@@ -463,6 +467,7 @@ set(gm_command_sources
     gm_commands/unscribespells.cpp
     gm_commands/untraindisc.cpp
     gm_commands/untraindiscs.cpp
+    gm_commands/vault.cpp
     gm_commands/wc.cpp
     gm_commands/worldshutdown.cpp
     gm_commands/worldwide.cpp

@@ -627,6 +627,39 @@ void DynamicItemsManager::ApplySkillBonuses(const DynamicItemBonuses &d, StatBon
 	b->CriticalHitChance[SkillArchery]           += d.ArcheryCritChancePct;
 }
 
+void DynamicItemsManager::CapBonuses(DynamicItemBonuses &d)
+{
+	const int32 pct_cap         = RuleI(Custom, DynamicItemPctCap);
+	const int32 crit_chance_cap = RuleI(Custom, DynamicItemCritChancePctCap);
+
+	auto cap = [](int32 &value, int32 limit) {
+		if (limit > 0 && value > limit) {
+			value = limit;
+		}
+	};
+
+	for (int32 *v : {
+		&d.OneHandSlashingSkillPct, &d.TwoHandSlashingSkillPct, &d.OneHandBluntSkillPct, &d.TwoHandBluntSkillPct,
+		&d.PiercingSkillPct, &d.HandToHandSkillPct, &d.ArcherySkillPct,
+		&d.DefenseSkillPct, &d.ParrySkillPct, &d.RiposteSkillPct, &d.DodgeSkillPct, &d.BlockSkillPct,
+		&d.FlyingKickSkillPct, &d.FlyingKickDmgPct, &d.BackstabSkillPct, &d.BackstabDmgPct,
+		&d.FrenzySkillPct, &d.FrenzyDmgPct, &d.BashSkillPct, &d.BashDmgPct,
+		&d.FireDamagePct, &d.ColdDamagePct, &d.MagicDamagePct, &d.PoisonDamagePct, &d.DiseaseDamagePct,
+		&d.HealAmountPct,
+		&d.StringedModPct, &d.WindModPct, &d.BrassModPct, &d.PercussionModPct, &d.SingingModPct,
+		&d.SpellCritDmgPct, &d.DotCritDmgPct, &d.MeleeCritDmgPct,
+	}) {
+		cap(*v, pct_cap);
+	}
+
+	for (int32 *v : {
+		&d.SpellCritChancePct, &d.DotCritChancePct, &d.HealCritChancePct, &d.HotCritChancePct,
+		&d.MeleeCritChancePct, &d.ArcheryCritChancePct,
+	}) {
+		cap(*v, crit_chance_cap);
+	}
+}
+
 int32 DynamicItemsManager::GetSpellDamagePct(const DynamicItemBonuses &d, uint16 spell_id)
 {
 	if (!IsValidSpell(spell_id)) {

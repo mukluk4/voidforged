@@ -1310,7 +1310,7 @@ bool Client::RangedAttack(Mob* other, bool CanDoubleAttack) {
 	}
 
 	if (!IsAttackAllowed(other) ||
-		(IsCasting() && !IsBardSong(casting_spell_id)) ||
+		(!RuleB(Custom, AllowAttackWhileCasting) && IsCasting() && !IsBardSong(casting_spell_id)) ||
 		IsSitting() ||
 		(DivineAura() && !GetGM()) ||
 		IsStunned() ||
@@ -1945,7 +1945,7 @@ void Client::ThrowingAttack(Mob* other, bool CanDoubleAttack) { //old was 51
 	}
 
 	if(!IsAttackAllowed(other) ||
-		(IsCasting() && !IsBardSong(casting_spell_id)) ||
+		(!RuleB(Custom, AllowAttackWhileCasting) && IsCasting() && !IsBardSong(casting_spell_id)) ||
 		IsSitting() ||
 		(DivineAura() && !GetGM()) ||
 		IsStunned() ||

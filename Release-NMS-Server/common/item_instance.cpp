@@ -32,6 +32,7 @@
 #include <limits.h>
 
 //#include <iostream>
+#include "nms_vault_item.h"
 
 int32 next_item_serial_number = 1;
 std::unordered_set<uint64> guids{};
@@ -1055,7 +1056,7 @@ bool EQ::ItemInstance::IsDroppable(bool recurse) const
 	}
 	/*if (m_ornamentidfile) // not implemented
 		return false;*/
-	if (m_attuned) {
+	if (m_attuned || NmsVaultIsArmoryItem(m_item->ID)) {
 		return false;
 	}
 

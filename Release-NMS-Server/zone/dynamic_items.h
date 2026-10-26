@@ -103,6 +103,10 @@ public:
 	// avoidance chances. Runs after all items, since normal item skill mods are "highest wins".
 	static void ApplySkillBonuses(const EQ::DynamicItemBonuses &d, StatBonuses *b);
 
+	// Clamps each percent total to Custom:DynamicItemPctCap / DynamicItemCritChancePctCap. Runs once
+	// after all items and set bonuses are totalled, before anything reads them.
+	static void CapBonuses(EQ::DynamicItemBonuses &d);
+
 	// Spell and song bonuses; these stack with focus effects and instrument mods
 	static int32 GetSpellDamagePct(const EQ::DynamicItemBonuses &d, uint16 spell_id);
 	static int32 GetSongModPct(const EQ::DynamicItemBonuses &d, int skill);

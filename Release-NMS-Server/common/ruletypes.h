@@ -1014,7 +1014,7 @@ RULE_REAL(AA, ModernAAScalingStartPercent, 300.0, "1000% or 10x AA experience at
 RULE_INT(AA, ModernAAScalingAAMinimum, 0, "The minimum number of earned AA before AA experience scaling begins")
 RULE_INT(AA, ModernAAScalingAALimit, 150, "The number of earned AA when AA experience scaling ends")
 RULE_BOOL(AA, SoundForAAEarned, true, "Play sound when AA point earned")
-RULE_INT(AA, UnusedAAPointCap, 100, "Cap for Unused AA Points.  Default: -1.  NOTE: DO NOT LOWER THIS WITHOUT KNOWING WHAT YOU ARE DOING. MAY RESULT IN PLAYERS LOSING AAs.")
+RULE_INT(AA, UnusedAAPointCap, -1, "Cap for Unused AA Points.  Default: -1.  NOTE: DO NOT LOWER THIS WITHOUT KNOWING WHAT YOU ARE DOING. MAY RESULT IN PLAYERS LOSING AAs.")
 RULE_INT(AA, MaxAAEXPPerKill, 1200000, "Maximum AA EXP per Kill (3425214 is about 7%) - Default: -1 will disable the check")
 RULE_CATEGORY_END()
 
@@ -1286,6 +1286,22 @@ RULE_BOOL(Custom,   ConditionalPetRampageImmunity, 			true, "Enable to make pets
 RULE_BOOL(Custom, 	DontInterruptHealsByMelee, 				true, "Enable to prevent direct heal spells from being interrupted by melee attacks")
 RULE_BOOL(Custom,	AlternateMobFDBehavior,					true, "Enable to cause mob FD effects to randomly pick a new target")
 RULE_BOOL(Custom,   EnableAccountAltCurrency, 				true, "Enable account-based alternate currency.")
+
+// Hybrids: auto-attack and auto-fire keep swinging while a (non-bard) spell is being cast
+RULE_BOOL(Custom,   AllowAttackWhileCasting,				true, "Melee auto-attack and ranged/throwing attacks continue while casting a spell.")
+
+// Dynamic item percent lines: caps on the character's total from all items and set bonuses
+RULE_INT(Custom,    DynamicItemPctCap,						100, "Cap on each dynamic item percent total (a skill %, ability damage %, spell type damage %, heal %, bard instrument %, crit damage %). 0 = no cap.")
+RULE_INT(Custom,    DynamicItemCritChancePctCap,			50, "Cap on each dynamic item critical hit chance total (spell, DoT, heal, HoT, melee, archery). 0 = no cap.")
+
+// Nautilus Vault (key item, #vault_* commands, Proc Locker, clicky autoload, vault bank/merchant). Ported from Triptych.
+RULE_BOOL(Custom,   NautilusVault,							true, "Enable the Nautilus Vault (#vault_*) storage, Proc Locker, clicky autoload, vault bank/merchant, and the Nautilus Vault inventory key. Off = no vault commands, grant, or combat hooks.")
+RULE_BOOL(Custom,   ProcLockerStacks,						true, "When true, the Nautilus Vault Proc Locker procs independently of the held weapon and its augs (all can proc in one swing). When false, the locker item replaces the held weapon's proc and suppresses its aug procs (reference behavior).")
+RULE_BOOL(Custom,   ProcLockerModSlots,					true, "When true, Nautilus Vault slots 84-87 (the Foci/Skill Mod placeholders on the Proc Locker page) lend their item's skill mods, instrument mods, and focus effects - never stats or procs.")
+
+// /nmsloot personal loot offers (installed 3.5 MB dinput8.dll). Ported from Rockin-Vik/NMS-Release.
+RULE_BOOL(Custom,   NmsLootOffers,							false, "On NPC death, independently re-roll loot for the killer and every group or raid member in this zone and send those items to /nmsloot. Keep/Sell/Tribute/Destroy/Pass grant that personal roll from anywhere in the zone. Opening a corpse only resends. Off = native corpse loot only.")
+RULE_INT(Custom,    NmsLootOfferExpireSeconds,				300, "Seconds before an unclaimed /nmsloot offer expires. Used only when NmsLootOffers is on.")
 RULE_BOOL(Custom,   DynamicItemDisplayIds, 					true, "Send each dynamic (seeded) item copy to clients under its own item ID so the item window shows that copy's rolls (clients cache item data by ID)")
 RULE_BOOL(Custom,   KillFactionHits, 						true, "Killing an NPC adjusts the killers' faction from its npc_faction entries. False: kills never change faction (quest faction still works)")
 RULE_STRING(Custom, ArmorSetTierVisuals, 					"13,15,17,12", "Spell effects shown on armor set tier changes: tier 1, tier 2, tier 3 gained, then tier lost (0 = none)")

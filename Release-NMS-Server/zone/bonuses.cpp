@@ -37,6 +37,8 @@
 #include "../common/unix.h"
 #endif
 
+#include "nms_vault.h"
+
 
 void Mob::CalcBonuses()
 {
@@ -74,6 +76,7 @@ void Client::CalcBonuses()
 	dynamic_item_bonuses = {};
 	CalcItemBonuses(&itembonuses);
 	CheckArmorSetBonuses(&itembonuses); // before ApplySkillBonuses: set bonuses can add dynamic affixes
+	DynamicItemsManager::CapBonuses(dynamic_item_bonuses);
 	DynamicItemsManager::ApplySkillBonuses(dynamic_item_bonuses, &itembonuses);
 	CalcHeroicBonuses(&itembonuses);
 	CalcEdibleBonuses(&itembonuses);
@@ -190,6 +193,8 @@ void Mob::CalcItemBonuses(StatBonuses* b) {
 	}
 
 	if (IsClient()) {
+		NmsVaultApplyLockerBonuses(CastToClient(), b);
+		NmsVaultApplyModBonuses(CastToClient(), b);
 		if (CastToClient()->GetPP().tribute_active) {
 			for (auto const &t: CastToClient()->GetPP().tributes) {
 				auto item_id = CastToClient()->LookupTributeItemID(t.tribute, t.tier);

@@ -52,6 +52,7 @@
 #include "zonedb.h"
 #include "../common/events/player_event_logs.h"
 #include "water_map.h"
+#include "nms_vault.h"
 
 extern QueryServ* QServ;
 extern Zone* zone;
@@ -364,7 +365,7 @@ bool Client::Process() {
 		*/
 		if (AutoAttackEnabled() || AutoFireEnabled()) {
 			if (!IsAIControlled() && !dead
-				&& !(spellend_timer.Enabled() && casting_spell_id && !IsBardSong(casting_spell_id))
+				&& (RuleB(Custom, AllowAttackWhileCasting) || !(spellend_timer.Enabled() && casting_spell_id && !IsBardSong(casting_spell_id)))
 				&& !IsStunned() && !IsFeared() && !IsMezzed() && GetAppearance() != eaDead && !IsMeleeDisabled()
 				)
 				may_use_attacks = true;
@@ -1675,7 +1676,7 @@ void Client::OPMoveCoin(const EQApplicationPacket* app)
 		{
 			uint32 distance = 0;
 			NPC *banker = entity_list.GetClosestBanker(this, distance);
-			if(!banker || distance > USE_NPC_RANGE2)
+			if(!NmsVaultBankAccess(this) && (!banker || distance > USE_NPC_RANGE2))
 			{
 				auto message = fmt::format(
 					"Player tried to make use of a banker (coin move) but "
@@ -1709,7 +1710,7 @@ void Client::OPMoveCoin(const EQApplicationPacket* app)
 		{
 			uint32 distance = 0;
 			NPC *banker = entity_list.GetClosestBanker(this, distance);
-			if(!banker || distance > USE_NPC_RANGE2)
+			if(!NmsVaultBankAccess(this) && (!banker || distance > USE_NPC_RANGE2))
 			{
 				auto message = fmt::format(
 					"Player tried to make use of a banker (shared coin move) but banker [{}] is "
@@ -1767,7 +1768,7 @@ void Client::OPMoveCoin(const EQApplicationPacket* app)
 		{
 			uint32 distance = 0;
 			NPC *banker = entity_list.GetClosestBanker(this, distance);
-			if(!banker || distance > USE_NPC_RANGE2)
+			if(!NmsVaultBankAccess(this) && (!banker || distance > USE_NPC_RANGE2))
 			{
 				auto message = fmt::format(
 					"Player tried to make use of a banker(coin move) but "
@@ -1829,7 +1830,7 @@ void Client::OPMoveCoin(const EQApplicationPacket* app)
 		{
 			uint32 distance = 0;
 			NPC *banker = entity_list.GetClosestBanker(this, distance);
-			if(!banker || distance > USE_NPC_RANGE2)
+			if(!NmsVaultBankAccess(this) && (!banker || distance > USE_NPC_RANGE2))
 			{
 				auto message = fmt::format(
 					"Player tried to make use of a banker (shared coin move) but banker [{}] is "

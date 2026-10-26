@@ -40,6 +40,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "npc.h"
 
 #include "bot.h"
+#include "nms_vault.h"
+#include "nms_loot_offers.h"
 
 extern QueryServ* QServ;
 extern WorldServer worldserver;
@@ -3185,6 +3187,18 @@ bool NPC::Death(Mob* killer_mob, int64 damage, uint16 spell, EQ::skills::SkillTy
 			}
 		}
 
+		// /nmsloot: personal loot rolls for the credited client and their group/raid in this zone
+		Client *nms_loot_credit = nullptr;
+		if (killer && killer->IsClient()) {
+			nms_loot_credit = killer->CastToClient();
+		} else if (killer_mob) {
+			Mob *ultimate_owner = killer_mob->GetUltimateOwner();
+			if (ultimate_owner && ultimate_owner->IsClient()) {
+				nms_loot_credit = ultimate_owner->CastToClient();
+			}
+		}
+		NmsLootOfferOnCorpseCreated(corpse, nms_loot_credit, this);
+
 		if (zone && zone->adv_data) {
 			auto sr = (ServerZoneAdventureDataReply_Struct *) zone->adv_data;
 			if (sr->type == Adventure_Kill) {
@@ -5334,6 +5348,18 @@ void Mob::TryWeaponProc(const EQ::ItemInstance *inst, const EQ::ItemData *weapon
 	}
 	if (!weapon)
 		return;
+
+	const EQ::ItemData *locker_item = nullptr;
+	if (IsClient()) {
+		locker_item = NmsVaultProcItem(CastToClient(), hand);
+		if (locker_item && !RuleB(Custom, ProcLockerStacks)) {
+			// Reference behavior: the locker item replaces the held weapon's proc and
+			// suppresses its aug procs. Stacking mode instead lets all three roll.
+			weapon = locker_item;
+			inst = nullptr;
+			locker_item = nullptr;
+		}
+	}
 	uint16 skillinuse = 28;
 	int ourlevel = GetLevel();
 	float ProcBonus = static_cast<float>(aabonuses.ProcChanceSPA + spellbonuses.ProcChanceSPA + itembonuses.ProcChanceSPA);
@@ -5426,6 +5452,66 @@ void Mob::TryWeaponProc(const EQ::ItemInstance *inst, const EQ::ItemData *weapon
 			}
 		}
 	}
+	// Nautilus Vault Proc Locker: independent rolls so the locker (its innate proc and
+	// its augs) procs alongside the held weapon's innate proc and aug procs
+	// (Custom:ProcLockerStacks). Same chance formula as a weapon proc, including the
+	// secondary-hand halving already in ProcChance. Ranged is covered: archery reaches
+	// here with hand = slotRange, rolling the slot-83 locker item and its augs.
+	if (IsClient() && locker_item) {
+		bool locker_proced = false;
+
+		if (locker_item->Proc.Type == EQ::item::ItemEffectCombatProc && IsValidSpell(locker_item->Proc.Effect)) {
+			int item_proc_chance = RuleI(Custom, PetProcRateCap) && IsPet()
+				? std::min(RuleI(Custom, PetProcRateCap), locker_item->ProcRate) : locker_item->ProcRate;
+			float LPC = ProcChance * (100.0f + static_cast<float>(item_proc_chance)) / 100.0f;
+			if (zone->random.Roll(LPC)) {
+				if (locker_item->Proc.Level2 > ourlevel) {
+					LogCombat("Proc Locker item ([{}]) rolled but requires level [{}]", locker_item->Name, locker_item->Proc.Level2);
+				}
+				else {
+					LogCombat("Proc Locker item ([{}]) procing spell [{}] on [{}]", locker_item->Name, locker_item->Proc.Effect, on->GetName());
+					ExecWeaponProc(nullptr, locker_item->Proc.Effect, on);
+					locker_proced = true;
+				}
+			}
+		}
+
+		// Mirror the stock weapon gating for the locker's own augs: an innate proc
+		// suppresses them unless OneProcPerWeapon is off or the 2H override applies.
+		if (RuleB(Custom, MultipleTwoHandedProcs) && locker_item->IsType2HWeapon()) {
+			locker_proced = false;
+		}
+		else if (!RuleB(Combat, OneProcPerWeapon)) {
+			locker_proced = false;
+		}
+
+		if (!locker_proced) {
+			const EQ::ItemData *locker_augs[6] = {};
+			const int aug_count = NmsVaultProcAugs(CastToClient(), hand, locker_augs, 6);
+			for (int i = 0; i < aug_count; ++i) {
+				const EQ::ItemData *aug = locker_augs[i];
+				if (aug->Proc.Type != EQ::item::ItemEffectCombatProc || !IsValidSpell(aug->Proc.Effect)) {
+					continue;
+				}
+				int item_proc_chance = RuleI(Custom, PetProcRateCap) && IsPet()
+					? std::min(RuleI(Custom, PetProcRateCap), aug->ProcRate) : aug->ProcRate;
+				float APC = ProcChance * (100.0f + static_cast<float>(item_proc_chance)) / 100.0f;
+				if (zone->random.Roll(APC)) {
+					if (aug->Proc.Level2 > ourlevel) {
+						LogCombat("Proc Locker aug ([{}]) rolled but requires level [{}]", aug->Name, aug->Proc.Level2);
+					}
+					else {
+						LogCombat("Proc Locker aug ([{}]) procing spell [{}] on [{}]", aug->Name, aug->Proc.Effect, on->GetName());
+						ExecWeaponProc(nullptr, aug->Proc.Effect, on);
+						if (RuleB(Combat, OneProcPerWeapon)) {
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+
 	// TODO: Powersource procs -- powersource procs are from augs so shouldn't need anything extra
 
 	return;

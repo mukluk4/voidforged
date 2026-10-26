@@ -78,6 +78,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "../common/rulesys.h"
 #include "dynamic_items.h"
 #include "../common/repositories/adventure_members_repository.h"
+#include "nms_vault.h"
+#include "nms_loot_offers.h"
 
 extern QueryServ* QServ;
 extern Zone* zone;
@@ -436,6 +438,7 @@ void MapOpcodes()
 	ConnectedOpcodes[OP_ResetAA] = &Client::Handle_OP_ResetAA;
 	ConnectedOpcodes[OP_UnderWorld] = &Client::Handle_OP_UnderWorld;
 	ConnectedOpcodes[OP_WaypointRequest] = &Client::Handle_OP_WaypointRequest;
+	ConnectedOpcodes[OP_NmsLootDecision] = &Client::Handle_OP_NmsLootDecision;
 
 	// shared tasks
 	ConnectedOpcodes[OP_SharedTaskRemovePlayer]   = &Client::Handle_OP_SharedTaskRemovePlayer;
@@ -827,6 +830,9 @@ void Client::CompleteConnect()
 	if (parse->PlayerHasQuestSub(EVENT_ENTER_ZONE)) {
 		parse->EventPlayer(EVENT_ENTER_ZONE, this, "", 0);
 	}
+
+	NmsVaultOnZoneIn(this);
+	NmsLootOfferRestoreOnZoneIn(this);
 
 	DeleteEntityVariable(SEE_BUFFS_FLAG);
 
@@ -3913,16 +3919,18 @@ void Client::Handle_OP_BankerChange(const EQApplicationPacket *app)
 		return;
 	}
 
-	uint32 distance = 0;
-	NPC *banker = entity_list.GetClosestBanker(this, distance);
+	if (!NmsVaultBankAccess(this)) {
+		uint32 distance = 0;
+		NPC *banker = entity_list.GetClosestBanker(this, distance);
 
-	if (!banker || distance > USE_NPC_RANGE2)
-	{
-		auto message = fmt::format(
-		    "Player tried to make use of a banker(money) but {} is non-existant or too far away ({} units).",
-		    banker ? banker->GetName() : "UNKNOWN NPC", distance);
-		RecordPlayerEventLog(PlayerEvent::POSSIBLE_HACK, PlayerEvent::PossibleHackEvent{.message = message});
-		return;
+		if (!banker || distance > USE_NPC_RANGE2)
+		{
+			auto message = fmt::format(
+			    "Player tried to make use of a banker(money) but {} is non-existant or too far away ({} units).",
+			    banker ? banker->GetName() : "UNKNOWN NPC", distance);
+			RecordPlayerEventLog(PlayerEvent::POSSIBLE_HACK, PlayerEvent::PossibleHackEvent{.message = message});
+			return;
+		}
 	}
 
 	auto outapp = new EQApplicationPacket(OP_BankerChange, nullptr, sizeof(BankerChange_Struct));
@@ -4745,6 +4753,11 @@ void Client::Handle_OP_CastSpell(const EQApplicationPacket *app)
 			if (inst && inst->IsClassCommon())
 			{
 				const EQ::ItemData* item = inst->GetItem();
+				if (NmsVaultTryOpenFromItem(this, item->ID)) {
+					InterruptSpell(castspell->spell_id);
+					SendSpellBarEnable(castspell->spell_id);
+					return;
+				}
 				if (item->Click.Effect != (uint32)castspell->spell_id)
 				{
 					std::string message = fmt::format("OP_CastSpell with item, tried to cast a different spell than what was on item - item spell id [{}] attempted [{}]", item->Click.Effect, (uint32)castspell->spell_id);
@@ -9938,6 +9951,13 @@ void Client::Handle_OP_ItemVerifyRequest(const EQApplicationPacket *app)
 		return;
 	}
 
+	if (NmsVaultTryOpenFromItem(this, item->ID)) {
+		if (item->Click.Effect > 0) {
+			SendSpellBarEnable(item->Click.Effect);
+		}
+		return;
+	}
+
 	spell_id = item->Click.Effect;
 	bool is_casting_bard_song = false;
 
@@ -10814,6 +10834,7 @@ void Client::Handle_OP_LootRequest(const EQApplicationPacket *app)
 		SetLooting(ent->GetID()); //store the entity we are looting
 
 		ent->CastToCorpse()->MakeLootRequestPackets(this, app);
+		NmsLootOfferOnCorpseOpen(this, ent->CastToCorpse());
 		return;
 	}
 	else {
@@ -13937,7 +13958,7 @@ void Client::Handle_OP_ShopPlayerBuy(const EQApplicationPacket *app)
 		!tmp->IsNPC() ||
 		tmp->GetClass() != Class::Merchant ||
 		mp->quantity < 1 ||
-		DistanceSquared(m_Position, tmp->GetPosition()) > USE_NPC_RANGE2
+		(!NmsVaultIsMerchant(this, tmp->GetID()) && DistanceSquared(m_Position, tmp->GetPosition()) > USE_NPC_RANGE2)
 	) {
 		SendMerchantEnd();
 		return;
@@ -14191,7 +14212,7 @@ void Client::Handle_OP_ShopPlayerSell(const EQApplicationPacket *app)
 		return;
 
 	//you have to be somewhat close to them to be properly using them
-	if (DistanceSquared(m_Position, vendor->GetPosition()) > USE_NPC_RANGE2)
+	if (!NmsVaultIsMerchant(this, vendor->GetID()) && DistanceSquared(m_Position, vendor->GetPosition()) > USE_NPC_RANGE2)
 		return;
 
 	uint32 price = 0;
@@ -14427,7 +14448,7 @@ void Client::Handle_OP_ShopRequest(const EQApplicationPacket *app)
 	}
 
 	// you have to be somewhat close to them to be properly using them
-	if (DistanceSquared(m_Position, tmp->GetPosition()) > USE_NPC_RANGE2) {
+	if (!NmsVaultIsMerchant(this, tmp->GetID()) && DistanceSquared(m_Position, tmp->GetPosition()) > USE_NPC_RANGE2) {
 		return;
 	}
 
@@ -16037,6 +16058,13 @@ void Client::Handle_OP_WearChange(const EQApplicationPacket *app)
 	if (wc->wear_slot_id >= 0 && wc->wear_slot_id < EQ::textures::weaponPrimary)
 		wc->hero_forge_model = GetHerosForgeModel(wc->wear_slot_id);
 
+	// Texture and tint too: on zone-in the client reports its gear's base look before it applies
+	// ornament (glamour) augments, which overwrote the correct look other players got in the spawn
+	if (wc->wear_slot_id < EQ::textures::materialCount) {
+		wc->material    = GetEquipmentMaterial(wc->wear_slot_id);
+		wc->color.Color = GetEquipmentColor(wc->wear_slot_id);
+	}
+
 	// we could maybe ignore this and just send our own from moveitem
 	// We probably need to skip this entirely when it is send as an ack, but not sure how to ID that.
 	entity_list.QueueClients(this, app, true);
@@ -17274,6 +17302,11 @@ void Client::Handle_OP_EvolveItem(const EQApplicationPacket *app)
 		default: {
 		}
 	}
+}
+
+void Client::Handle_OP_NmsLootDecision(const EQApplicationPacket *app)
+{
+	NmsLootOfferHandleDecision(this, app);
 }
 
 void Client::Handle_OP_WaypointRequest(const EQApplicationPacket *app)

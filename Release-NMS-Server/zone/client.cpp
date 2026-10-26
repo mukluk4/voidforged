@@ -92,6 +92,7 @@ extern volatile bool RunLoops;
 #include "../common/skill_caps.h"
 #include "client.h"
 #include "dynamic_items.h"
+#include "nms_vault.h"
 
 
 extern QueryServ* QServ;
@@ -732,6 +733,10 @@ Client::Client(EQStreamInterface *ieqs) : Mob(
 Client::~Client() {
 	entity_list.RemoveMobFromCloseLists(this);
 	m_close_mobs.clear();
+
+	// Despawn the vault merchant and drop this character's cached vault state. Logout and
+	// link-death reach here but not SendMerchantEnd.
+	NmsVaultOnClientDestroy(this);
 
 	if (ClientVersion() == EQ::versions::ClientVersion::RoF2 && RuleB (Parcel, EnableParcelMerchants)) {
 		DoParcelCancel();
@@ -15196,6 +15201,7 @@ std::string Client::GetBandolierItemName(uint8 bandolier_slot, uint8 slot_id)
 
 void Client::SendMerchantEnd()
 {
+	NmsVaultOnMerchantEnd(this);
 	SetMerchantSessionEntityID(0);
 
 	if (ClientVersion() == EQ::versions::ClientVersion::RoF2 && RuleB(Parcel, EnableParcelMerchants)) {

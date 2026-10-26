@@ -129,8 +129,14 @@ namespace EQ
 		// Add item to cursor queue
 		int16 PushCursor(const ItemInstance& inst);
 
+		// Add item to the front of the cursor queue (restores a cursor item a failed move took)
+		int16 PushCursorFront(const ItemInstance& inst);
+
 		// Get cursor item in front of queue
 		ItemInstance* GetCursorItem();
+
+		// Remove (and return) the most recently pushed cursor item
+		ItemInstance* PopCursorBack();
 
 		// Swap items in inventory
 		enum SwapItemFailState : int8 { swapInvalid = -1, swapPass = 0, swapNotAllowed, swapNullData, swapRaceClass, swapDeity, swapLevel };
