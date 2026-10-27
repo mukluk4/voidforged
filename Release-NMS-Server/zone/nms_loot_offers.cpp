@@ -669,6 +669,23 @@ void NmsLootOfferOnCorpseCreated(Corpse *corpse, Client *credit, NPC *source)
 		}
 		corpse->RemoveCash();
 	}
+
+	// With 2+ players rolling, the personal rolls replace the corpse loot; a lone player keeps both.
+	// Quest/script-added items (lootdrop_id 0) stay on the corpse.
+	if (recipients.size() >= 2 && RuleB(Custom, NmsLootEmptyGroupCorpse)) {
+		std::vector<LootItem *> table_items;
+		for (auto *item : corpse->GetLootItems()) {
+			if (item && item->lootdrop_id) {
+				table_items.push_back(item);
+			}
+		}
+		for (auto *item : table_items) {
+			corpse->RemoveItem(item, false);
+		}
+		if (corpse->IsEmpty()) {
+			corpse->ResetDecayTimer();
+		}
+	}
 }
 
 void NmsLootOfferRestoreOnZoneIn(Client *c)

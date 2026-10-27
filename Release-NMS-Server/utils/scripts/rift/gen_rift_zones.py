@@ -17,6 +17,7 @@ CONTROLLER_GROUP = 5003835     # spawngroup holding the rift controller NPC
 VERSION = 1                    # instance version the rift copies live in (rift_config.lua instance_version)
 ENTRY_CLEAR = 40               # no archetype spawns within this many units of the entry point (same floor) ...
 ENTRY_CLEAR_Z = 30             # ... where same floor = within this much height
+ENTRY_CLEAR_BY_ZONE = {'sleeper': 150}  # zones whose entry room is bigger than ENTRY_CLEAR (Sleeper's Tomb: whole entry room)
 
 DEFAULT_ZONES = ['codecay', 'sebilis', 'chardok',
                  'befallen', 'karnor', 'mistmoore', 'fearplane', 'cazicthule', 'charasis', 'permafrost',
@@ -95,7 +96,7 @@ for sn in ZONES:
                f"0, 0, 1, 0, -1, -1 FROM spawn2 WHERE zone = {q} AND version = 0 "
                f"GROUP BY ROUND(x), ROUND(y), ROUND(z) "
                # players zone in on the entry point: keep it clear of spawns on the same floor
-               f"HAVING POW(MIN(x) - ({z['x']}), 2) + POW(MIN(y) - ({z['y']}), 2) > {ENTRY_CLEAR * ENTRY_CLEAR} "
+               f"HAVING POW(MIN(x) - ({z['x']}), 2) + POW(MIN(y) - ({z['y']}), 2) > {ENTRY_CLEAR_BY_ZONE.get(sn, ENTRY_CLEAR) ** 2} "
                f"OR ABS(MIN(z) - ({z['z']})) > {ENTRY_CLEAR_Z};")
     sql.append(f"INSERT INTO spawn2 (spawngroupID, zone, version, x, y, z, heading, respawntime, variance, pathgrid, "
                f"path_when_zone_idle, _condition, cond_value, animation, min_expansion, max_expansion) "

@@ -53,7 +53,7 @@ CURATED_BOSSES = {
     'sleeper':    [boss(604, 'Dracolich', 15, 3), boss(530, 'Ancient Dragon', 15, 26), boss(572, 'Clockwork Guardian', 12, 5)],
     'velketor':   [boss(441, 'Spider Queen', 10, 22), GELIDRAN(), SPECTRE()],
     'hateplaneb': [DARK_LORD(), boss(351, 'Knight of Hate', 8, 1, gender=0), boss(352, 'Arcanist of Hate', 8, 1, gender=0)],
-    'akheva':     [boss(722, 'Akheva Overlord', 8, 1, gender=0), boss(723, 'Servant of Shadow', 9, 6), boss(708, 'Alaran Ghost', 8, 3)],
+    'akheva':     [boss(722, 'Akheva Overlord', 8, 1, gender=0), AMYGDALAN(), boss(708, 'Alaran Ghost', 8, 3)],
     'griegsend':  [boss(588, 'Grieg Phantom', 8, 3, gender=0), boss(659, 'Marionette', 8, 5), BANSHEE()],
 }
 

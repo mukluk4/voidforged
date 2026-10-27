@@ -1308,6 +1308,7 @@ RULE_BOOL(Custom,   ProcLockerModSlots,					true, "When true, Nautilus Vault slo
 // /nmsloot personal loot offers (installed 3.5 MB dinput8.dll). Ported from Rockin-Vik/NMS-Release.
 RULE_BOOL(Custom,   NmsLootOffers,							false, "On NPC death, independently re-roll loot for the killer and every group or raid member in this zone and send those items to /nmsloot. Keep/Sell/Tribute/Destroy/Pass grant that personal roll from anywhere in the zone. Opening a corpse only resends. Off = native corpse loot only.")
 RULE_INT(Custom,    NmsLootOfferExpireSeconds,				300, "Seconds before an unclaimed /nmsloot offer expires. Used only when NmsLootOffers is on.")
+RULE_BOOL(Custom,   NmsLootEmptyGroupCorpse,				true, "When /nmsloot offers go to 2 or more players, remove the corpse's loot table items (quest-added items stay) and let an emptied corpse decay at once. A lone player keeps the corpse loot. Used only when NmsLootOffers is on.")
 RULE_BOOL(Custom,   DynamicItemDisplayIds, 					true, "Send each dynamic (seeded) item copy to clients under its own item ID so the item window shows that copy's rolls (clients cache item data by ID)")
 RULE_BOOL(Custom,   KillFactionHits, 						true, "Killing an NPC adjusts the killers' faction from its npc_faction entries. False: kills never change faction (quest faction still works)")
 RULE_STRING(Custom, ArmorSetTierVisuals, 					"13,15,17,12", "Spell effects shown on armor set tier changes: tier 1, tier 2, tier 3 gained, then tier lost (0 = none)")

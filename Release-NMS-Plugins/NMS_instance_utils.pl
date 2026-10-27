@@ -2,6 +2,9 @@
 
 use POSIX qw(ceil);
 
+# Scale expedition instance NPCs by member count (see ScaleInstanceNPC). 0 = off: NPCs keep their normal stats.
+my $SCALE_INSTANCE_NPCS = 0;
+
 sub OfferStandardInstance {
 	my $client = plugin::val('$client');
 	my $npc = plugin::val('$npc');
@@ -111,6 +114,8 @@ sub OfferStandardInstance {
 }
 
 sub ScaleInstanceNPC {
+	return if !$SCALE_INSTANCE_NPCS;
+
 	my $instanceversion = plugin::val('$instanceversion');
 	if ($instanceversion != quest::get_rule("Custom:StaticInstanceVersion")) {
 		return;

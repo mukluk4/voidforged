@@ -241,7 +241,7 @@ M.bosses["hateplaneb"] = {
 }
 M.bosses["akheva"] = {
     { race = 722, gender = 0, texture = 0, helmtexture = 0, size = 8, bodytype = 1, name = "Akheva Overlord" },
-    { race = 723, gender = 2, texture = 0, helmtexture = 0, size = 9, bodytype = 6, name = "Servant of Shadow" },
+    { race = 663, gender = 2, texture = 0, helmtexture = 0, size = 9, bodytype = 6, name = "Amygdalan" },
     { race = 708, gender = 2, texture = 0, helmtexture = 0, size = 8, bodytype = 3, name = "Alaran Ghost" },
 }
 M.bosses["griegsend"] = {
