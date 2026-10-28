@@ -1615,12 +1615,14 @@ struct NmsLootOfferHeader_Struct
 	uint32 count;
 };
 
+// The add-on saves the first field as the ItemID of its sell/keep rules and matches new drops on it,
+// so it must be the item id; the offer id rides at entry+12 and comes back in the decision
 struct NmsLootOfferEntry_Struct
 {
-	uint32 offer_id;
+	uint32 item_id;
 	uint32 icon;
 	int32  charges;
-	uint32 item_id;
+	uint32 offer_id;
 	uint8  bonus;
 	uint8  unknown_17[5];
 	char   name[64];
@@ -1630,8 +1632,8 @@ struct NmsLootOfferEntry_Struct
 struct NmsLootDecision_Struct
 {
 	uint16 unknown_u16;
-	uint32 item_id;
-	uint32 offer_id;
+	uint32 offer_id; // echo of entry+12
+	uint32 item_id;  // echo of entry+0
 	uint8  action;
 	char   name[64];
 };
