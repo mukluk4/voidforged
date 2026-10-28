@@ -103,6 +103,9 @@ SET(zone_sources
     nms_waypoints.cpp
     nms_vault.cpp
     nms_loot_offers.cpp
+    gear_sets.cpp
+    nms_chronal_tribute.cpp
+    nms_paragon.cpp
     tradeskills.cpp
     trading.cpp
     trap.cpp
@@ -151,6 +154,9 @@ SET(zone_headers
     dynamic_items.h
     nms_vault.h
     nms_loot_offers.h
+    gear_sets.h
+    nms_chronal_tribute.h
+    nms_paragon.h
     dynamic_zone.h
     embparser.h
     embperl.h
@@ -354,6 +360,7 @@ set(gm_command_sources
     gm_commands/door_manipulation.cpp
     gm_commands/dye.cpp
     gm_commands/dynamic_items.cpp
+    gm_commands/gear.cpp
     gm_commands/dz.cpp
     gm_commands/dzkickplayers.cpp
     gm_commands/editmassrespawn.cpp
@@ -427,6 +434,7 @@ set(gm_command_sources
     gm_commands/raidloot.cpp
     gm_commands/randomfeatures.cpp
     gm_commands/refreshgroup.cpp
+    gm_commands/reforge.cpp
     gm_commands/reload.cpp
     gm_commands/removeitem.cpp
     gm_commands/repop.cpp

@@ -17,6 +17,7 @@ namespace {
 		PURPOSE_VALUE = 1,
 		PURPOSE_PICK  = 2,
 		PURPOSE_COUNT = 3,
+		PURPOSE_REFORGE_PICK = 4,
 	};
 
 	uint64_t SplitMix64(uint64_t x)
@@ -141,4 +142,94 @@ std::vector<RolledAffix> RollDynamicItem(
 	);
 
 	return rolled;
+}
+
+// -------------------------------------------------------------------
+// #reforge
+// -------------------------------------------------------------------
+void ApplyDynamicEnchant(
+	std::vector<RolledAffix> &rolled,
+	const DynamicEnchant &enchant,
+	const DynamicItemDef &def,
+	const std::vector<DynamicAffixDef> &pool,
+	uint32 item_slots
+)
+{
+	if (enchant.to == AFFIX_NONE || enchant.seed == 0) {
+		return;
+	}
+
+	auto target = std::find_if(
+		rolled.begin(),
+		rolled.end(),
+		[&](const RolledAffix &l) { return !l.guaranteed && l.affix == enchant.from; }
+	);
+	if (target == rolled.end()) {
+		return;
+	}
+
+	// The replacement can't duplicate another line (the pool may have changed since)
+	for (const auto &l : rolled) {
+		if (&l != &*target && l.affix == enchant.to) {
+			return;
+		}
+	}
+
+	const auto line = std::find_if(
+		pool.begin(),
+		pool.end(),
+		[&](const DynamicAffixDef &d) { return d.affix == enchant.to && !d.guaranteed && FitsSlot(d, item_slots); }
+	);
+	if (line == pool.end()) {
+		return;
+	}
+
+	double position = 0.0;
+	target->affix    = enchant.to;
+	target->value    = RollValue(enchant.seed, *line, def.stat_multiplier, position);
+	target->position = position;
+	target->reforged = true;
+
+	std::sort(
+		rolled.begin(),
+		rolled.end(),
+		[](const RolledAffix &a, const RolledAffix &b) { return a.affix < b.affix; }
+	);
+}
+
+std::vector<RolledAffix> RollReforgeOptions(
+	uint64_t seed,
+	const std::vector<EQ::eDynamicAffixID> &taken,
+	const DynamicItemDef &def,
+	const std::vector<DynamicAffixDef> &pool,
+	uint32 item_slots,
+	uint32 count
+)
+{
+	std::vector<std::pair<double, const DynamicAffixDef *>> candidates;
+	for (const auto &line : pool) {
+		if (line.guaranteed || line.weight == 0 || !FitsSlot(line, item_slots) ||
+			std::find(taken.begin(), taken.end(), line.affix) != taken.end()) {
+			continue;
+		}
+
+		const double u = 1.0 - Unit(seed, HashCode(DynamicItemsManager::AffixCode(line.affix)), PURPOSE_REFORGE_PICK); // (0, 1]
+		candidates.emplace_back(std::log(u) / static_cast<double>(line.weight), &line);
+	}
+
+	std::sort(
+		candidates.begin(),
+		candidates.end(),
+		[](const auto &a, const auto &b) { return a.first > b.first; }
+	);
+
+	std::vector<RolledAffix> options;
+	for (uint32 i = 0; i < count && i < candidates.size(); ++i) {
+		const auto &line     = *candidates[i].second;
+		double      position = 0.0;
+		const auto  value    = RollValue(seed, line, def.stat_multiplier, position);
+		options.push_back({ line.affix, value, false, position, true });
+	}
+
+	return options;
 }

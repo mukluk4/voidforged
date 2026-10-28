@@ -29,6 +29,7 @@
 #include "../common/repositories/character_corpse_items_repository.h"
 #include "queryserv.h"
 #include "nms_vault.h"
+#include "gear_sets.h"
 
 extern WorldServer worldserver;
 extern QueryServ  *QServ;
@@ -4141,6 +4142,9 @@ void Client::CreateBandolier(const EQApplicationPacket *app)
 			m_pp.bandoliers[bs->Number].Items[BandolierSlot].Name[0] = '\0';
 		}
 	}
+
+	// Full gear sets: also remember every worn slot
+	GearSetSave(this, bs->Number);
 }
 
 void Client::RemoveBandolier(const EQApplicationPacket *app)
@@ -4153,6 +4157,7 @@ void Client::RemoveBandolier(const EQApplicationPacket *app)
 		m_pp.bandoliers[bds->Number].Items[i].Icon = 0;
 	}
 	database.DeleteCharacterBandolier(CharacterID(), bds->Number);
+	GearSetDelete(this, bds->Number);
 }
 
 void Client::SetBandolier(const EQApplicationPacket *app)
@@ -4301,6 +4306,9 @@ void Client::SetBandolier(const EQApplicationPacket *app)
 	if (RuleI(Character, BandolierSwapDelay) > 0) {
 		bandolier_throttle_timer.Start(RuleI(Character, BandolierSwapDelay));
 	}
+
+	// Full gear sets: the client has moved the weapons; the server moves the rest and tells the client
+	GearSetApply(this, bss->Number, false);
 
 	// finally, recalculate any stat bonuses from the item change
 	CalcBonuses();

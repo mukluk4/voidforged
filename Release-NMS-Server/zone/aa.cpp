@@ -29,6 +29,9 @@ Copyright (C) 2001-2016 EQEMu Development Team (http://eqemulator.net)
 #include "corpse.h"
 #include "groups.h"
 #include "mob.h"
+#include "nms_paragon.h"
+
+#include <algorithm>
 #include "queryserv.h"
 #include "quest_parser_collection.h"
 #include "raids.h"
@@ -1064,7 +1067,8 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 	aai->expansion = rank->expansion;
 	aai->category = ability->category;
 	aai->charges = ability->charges;
-	aai->total_effects = rank->effects.size();
+	// Server-only effects (Paragon heroic stats) aren't sent; the client has no such spell effect
+	aai->total_effects = std::count_if(rank->effects.begin(), rank->effects.end(), [](const auto &e) { return !NmsIsParagonSpa(e.effect_id); });
 	aai->total_prereqs = rank->prereqs.size();
 
 	if (RuleB(Custom, UseDynamicAATimers)) {
@@ -1078,6 +1082,9 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 
 	outapp->SetWritePosition(sizeof(AARankInfo_Struct));
 	for(auto &effect : rank->effects) {
+		if (NmsIsParagonSpa(effect.effect_id)) {
+			continue;
+		}
 		outapp->WriteSInt32(effect.effect_id);
 		outapp->WriteSInt32(effect.base_value);
 		outapp->WriteSInt32(effect.limit_value);

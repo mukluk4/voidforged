@@ -2561,6 +2561,26 @@ CREATE TABLE IF NOT EXISTS character_nms_loot_offers (
 		.content_schema_update = false,
 	},
 
+	ManifestEntry{
+		.version = 37,
+		.description = "2026_10_26_character_gear_sets",
+		.check = "SHOW TABLES LIKE 'character_gear_sets'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+CREATE TABLE IF NOT EXISTS character_gear_sets (
+    character_id INT UNSIGNED NOT NULL,
+    set_number TINYINT UNSIGNED NOT NULL,
+    slot_id SMALLINT NOT NULL,
+    item_id INT UNSIGNED NOT NULL,
+    guid BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    custom_data TEXT NULL,
+    PRIMARY KEY (character_id, set_number, slot_id)
+);
+)",
+		.content_schema_update = false,
+	},
+
 	// Used for testing
 	//	ManifestEntry{
 	//		.version = 9229,

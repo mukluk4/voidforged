@@ -1,0 +1,24 @@
+19000^1^Paragon of Vitality^0
+19000^4^Each rank grants +25 hit points, up to +1250 hit points at rank 50. Rank 1 costs 5 points and each rank after costs 1 more (1,475 points for all 50).^0
+19050^1^Paragon of the Mind^0
+19050^4^Each rank grants +25 mana, up to +1250 mana at rank 50. Rank 1 costs 5 points and each rank after costs 1 more (1,475 points for all 50).^0
+19100^1^Paragon of Stamina^0
+19100^4^Each rank grants +25 endurance, up to +1250 endurance at rank 50. Rank 1 costs 5 points and each rank after costs 1 more (1,475 points for all 50).^0
+19150^1^Paragon of Fortitude^0
+19150^4^Each rank grants +1 armor class, up to +50 armor class at rank 50. Rank 1 costs 5 points and each rank after costs 1 more (1,475 points for all 50).^0
+19200^1^Paragon of Might^0
+19200^4^Each rank grants +1 attack, up to +50 attack at rank 50. Rank 1 costs 5 points and each rank after costs 1 more (1,475 points for all 50).^0
+19250^1^Paragon of Ferocity^0
+19250^4^Each rank grants +1% melee damage, up to +10% melee damage at rank 10. Rank 1 costs 25 points and each rank after costs 10 more (700 points for all 10).^0
+19260^1^Paragon of Strength^0
+19260^4^Each rank grants +1 Heroic Strength, up to +50 Heroic Strength at rank 50. Rank 1 costs 15 points and each rank after costs 3 more (4,425 points for all 50).^0
+19310^1^Paragon of Endurance^0
+19310^4^Each rank grants +1 Heroic Stamina, up to +50 Heroic Stamina at rank 50. Rank 1 costs 15 points and each rank after costs 3 more (4,425 points for all 50).^0
+19360^1^Paragon of Agility^0
+19360^4^Each rank grants +1 Heroic Agility, up to +50 Heroic Agility at rank 50. Rank 1 costs 15 points and each rank after costs 3 more (4,425 points for all 50).^0
+19410^1^Paragon of Dexterity^0
+19410^4^Each rank grants +1 Heroic Dexterity, up to +50 Heroic Dexterity at rank 50. Rank 1 costs 15 points and each rank after costs 3 more (4,425 points for all 50).^0
+19460^1^Paragon of Intellect^0
+19460^4^Each rank grants +1 Heroic Intelligence, up to +50 Heroic Intelligence at rank 50. Rank 1 costs 15 points and each rank after costs 3 more (4,425 points for all 50).^0
+19510^1^Paragon of Wisdom^0
+19510^4^Each rank grants +1 Heroic Wisdom, up to +50 Heroic Wisdom at rank 50. Rank 1 costs 15 points and each rank after costs 3 more (4,425 points for all 50).^0

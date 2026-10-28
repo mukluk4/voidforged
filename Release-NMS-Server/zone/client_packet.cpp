@@ -9595,13 +9595,17 @@ void Client::Handle_OP_ItemLinkClick(const EQApplicationPacket *app)
 	if (DynamicItemsManager::IsDisplayId(ivrs->item_id)) {
 		uint32 dynamic_item_id = 0;
 		uint64 dynamic_seed    = 0;
-		if (!DynamicItemsManager::Instance()->ResolveDisplayId(ivrs->item_id, dynamic_item_id, dynamic_seed)) {
+		std::string dynamic_enchant;
+		if (!DynamicItemsManager::Instance()->ResolveDisplayId(ivrs->item_id, dynamic_item_id, dynamic_seed, dynamic_enchant)) {
 			Message(Chat::White, "That item's details aren't available in this zone.");
 			return;
 		}
 
 		auto dynamic_inst = database.CreateItem(dynamic_item_id);
 		if (dynamic_inst) {
+			if (!dynamic_enchant.empty()) {
+				dynamic_inst->SetCustomData(EQ::ItemInstance::DYNAMIC_ENCHANT_KEY, dynamic_enchant);
+			}
 			DynamicItemsManager::SetSeed(*dynamic_inst, dynamic_seed);
 			SendItemPacket(0, dynamic_inst, ItemPacketViewLink);
 			safe_delete(dynamic_inst);

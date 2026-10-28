@@ -976,7 +976,7 @@ void EQ::ItemInstance::SetCustomData(const std::string& identifier, const std::s
 	DeleteCustomData(identifier);
 	m_custom_data[identifier] = value;
 
-	if (identifier == DYNAMIC_SEED_KEY && dynamic_stats_hook) {
+	if ((identifier == DYNAMIC_SEED_KEY || identifier == DYNAMIC_ENCHANT_KEY) && dynamic_stats_hook) {
 		dynamic_stats_hook(*this);
 	}
 }

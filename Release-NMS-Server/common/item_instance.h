@@ -118,6 +118,7 @@ namespace EQ
 		// Dynamic (seeded) items: zone installs a hook that builds this instance's rolled stats
 		// whenever its seed is set. The rolled copy is what GetItem() returns and what clients are sent.
 		static constexpr const char *DYNAMIC_SEED_KEY = "dyn_seed";
+		static constexpr const char *DYNAMIC_ENCHANT_KEY = "dyn_ench"; // #reforge: the one line replaced (zone/dynamic_items.h)
 		using DynamicStatsHook = void (*)(ItemInstance &inst);
 		static DynamicStatsHook dynamic_stats_hook;
 

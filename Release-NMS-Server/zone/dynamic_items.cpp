@@ -229,7 +229,77 @@ std::vector<RolledAffix> DynamicItemsManager::Roll(const ItemInstance &inst) con
 		return {};
 	}
 
-	return RollDynamicItem(GetSeed(inst), *def, *pool, item->Slots);
+	auto rolled = RollDynamicItem(GetSeed(inst), *def, *pool, item->Slots);
+	ApplyDynamicEnchant(rolled, GetEnchant(inst), *def, *pool, item->Slots);
+	return rolled;
+}
+
+DynamicEnchant DynamicItemsManager::GetEnchant(const ItemInstance &inst)
+{
+	DynamicEnchant e;
+	const auto parts = Strings::Split(inst.GetCustomData(ItemInstance::DYNAMIC_ENCHANT_KEY), '|');
+	if (parts.size() != 4) {
+		return e;
+	}
+
+	e.from  = AffixFromCode(parts[0]);
+	e.to    = parts[1].empty() ? AFFIX_NONE : AffixFromCode(parts[1]);
+	e.seed  = Strings::IsNumber(parts[2]) ? Strings::ToUnsignedBigInt(parts[2]) : 0;
+	e.count = Strings::IsNumber(parts[3]) ? Strings::ToUnsignedInt(parts[3]) : 0;
+	return e;
+}
+
+void DynamicItemsManager::SetEnchant(ItemInstance &inst, const DynamicEnchant &e)
+{
+	inst.SetCustomData(
+		ItemInstance::DYNAMIC_ENCHANT_KEY,
+		fmt::format("{}|{}|{}|{}", AffixCode(e.from), e.to == AFFIX_NONE ? "" : AffixCode(e.to), e.seed, e.count)
+	);
+}
+
+bool DynamicItemsManager::GetReforgeOffer(const ItemInstance &inst, eDynamicAffixID &from, uint64 &seed)
+{
+	const auto parts = Strings::Split(inst.GetCustomData(REFORGE_OFFER_KEY), '|');
+	if (parts.size() != 2 || !Strings::IsNumber(parts[1])) {
+		return false;
+	}
+
+	from = AffixFromCode(parts[0]);
+	seed = Strings::ToUnsignedBigInt(parts[1]);
+	return from != AFFIX_NONE && seed != 0;
+}
+
+void DynamicItemsManager::SetReforgeOffer(ItemInstance &inst, eDynamicAffixID from, uint64 seed)
+{
+	inst.SetCustomData(REFORGE_OFFER_KEY, fmt::format("{}|{}", AffixCode(from), seed));
+}
+
+void DynamicItemsManager::ClearReforgeOffer(ItemInstance &inst)
+{
+	inst.DeleteCustomData(REFORGE_OFFER_KEY);
+}
+
+std::vector<RolledAffix> DynamicItemsManager::GetReforgeOptions(const ItemInstance &inst, eDynamicAffixID from, uint64 seed) const
+{
+	const auto item = inst.GetUnscaledItem();
+	const auto def  = item ? GetItem(item->ID) : nullptr;
+	const auto pool = def ? GetClassPool(def->class_id) : nullptr;
+	if (!pool) {
+		return {};
+	}
+
+	// The line being reforged is the one rolled as `from` (it may already have been reforged)
+	const auto enchant = GetEnchant(inst);
+	const auto current = enchant.from == from && enchant.to != AFFIX_NONE ? enchant.to : from;
+
+	std::vector<eDynamicAffixID> taken;
+	for (const auto &line : Roll(inst)) {
+		if (line.affix != current) {
+			taken.push_back(line.affix);
+		}
+	}
+
+	return RollReforgeOptions(seed, taken, *def, *pool, item->Slots, REFORGE_OPTIONS);
 }
 
 void DynamicItemsManager::ApplyToInstance(ItemInstance &inst)
@@ -332,16 +402,19 @@ void DynamicItemsManager::ApplyToInstance(ItemInstance &inst)
 
 	// Own item ID per copy so the client's item window doesn't reuse another copy's stats
 	if (RuleB(Custom, DynamicItemDisplayIds)) {
+		// A reforge changes the stats, so it gets a new display ID too
 		const uint64 seed       = GetSeed(inst);
-		const uint32 display_id = DISPLAY_ID_BASE + static_cast<uint32>(MixSeed(seed) % (0xFFFFFFF - DISPLAY_ID_BASE));
+		const auto   enchant    = inst.GetCustomData(ItemInstance::DYNAMIC_ENCHANT_KEY);
+		const uint64 mixed      = enchant.empty() ? seed : seed ^ MixSeed(std::hash<std::string>{}(enchant));
+		const uint32 display_id = DISPLAY_ID_BASE + static_cast<uint32>(MixSeed(mixed) % (0xFFFFFFF - DISPLAY_ID_BASE));
 		inst.SetDisplayID(display_id);
-		Instance()->m_display_ids[display_id] = { base->ID, seed };
+		Instance()->m_display_ids[display_id] = { base->ID, seed, enchant };
 	} else {
 		inst.SetDisplayID(0);
 	}
 }
 
-bool DynamicItemsManager::ResolveDisplayId(uint32 display_id, uint32 &item_id, uint64 &seed) const
+bool DynamicItemsManager::ResolveDisplayId(uint32 display_id, uint32 &item_id, uint64 &seed, std::string &enchant) const
 {
 	const auto it = m_display_ids.find(display_id);
 	if (it == m_display_ids.end()) {
@@ -350,6 +423,7 @@ bool DynamicItemsManager::ResolveDisplayId(uint32 display_id, uint32 &item_id, u
 
 	item_id = it->second.item_id;
 	seed    = it->second.seed;
+	enchant = it->second.enchant;
 	return true;
 }
 

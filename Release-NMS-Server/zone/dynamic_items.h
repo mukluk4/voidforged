@@ -42,6 +42,16 @@ struct RolledAffix {
 	int32               value      = 0;
 	bool                guaranteed = false;
 	double              position   = 0.0; // where the roll landed in its range, 0 = min, 1 = max
+	bool                reforged   = false;
+};
+
+// #reforge: one random line of a rolled item replaced by another. Only one line per item can ever be
+// reforged (the first one chosen). Stored in custom_data dyn_ench as "from|to|seed|count" (affix codes).
+struct DynamicEnchant {
+	EQ::eDynamicAffixID from  = EQ::AFFIX_NONE; // the line as the seed rolled it
+	EQ::eDynamicAffixID to    = EQ::AFFIX_NONE; // what it is now; AFFIX_NONE = unchanged
+	uint64_t            seed  = 0;              // the value roll for `to`
+	uint32              count = 0;              // reforges paid for on this item
 };
 
 // Defined in dynamic_seed_parser.cpp (no database or zone dependencies, so it can be tested alone)
@@ -51,6 +61,26 @@ std::vector<RolledAffix> RollDynamicItem(
 	const DynamicItemDef &def,
 	const std::vector<DynamicAffixDef> &pool,
 	uint32 item_slots
+);
+
+// Replaces the reforged line, if it's still on the item and its replacement is still in the pool
+void ApplyDynamicEnchant(
+	std::vector<RolledAffix> &rolled,
+	const DynamicEnchant &enchant,
+	const DynamicItemDef &def,
+	const std::vector<DynamicAffixDef> &pool,
+	uint32 item_slots
+);
+
+// Up to `count` replacements for a line: random affixes this item can roll, other than `taken`
+// (the item's other lines). Each comes with its value; picking one stores `seed` as the enchant seed.
+std::vector<RolledAffix> RollReforgeOptions(
+	uint64_t seed,
+	const std::vector<EQ::eDynamicAffixID> &taken,
+	const DynamicItemDef &def,
+	const std::vector<DynamicAffixDef> &pool,
+	uint32 item_slots,
+	uint32 count
 );
 
 // One rolled item compared against another (e.g. a spare against what's equipped)
@@ -81,6 +111,19 @@ public:
 	// through inventory, bank and corpse saves. 0 = not rolled.
 	static uint64 GetSeed(const EQ::ItemInstance &inst);
 	static void SetSeed(EQ::ItemInstance &inst, uint64 seed);
+
+	// #reforge record (custom_data dyn_ench) and the choices paid for but not yet taken (dyn_offer:
+	// "from|seed", so they survive zoning). Setting the enchant rebuilds the item's stats.
+	static DynamicEnchant GetEnchant(const EQ::ItemInstance &inst);
+	static void SetEnchant(EQ::ItemInstance &inst, const DynamicEnchant &enchant);
+	static bool GetReforgeOffer(const EQ::ItemInstance &inst, EQ::eDynamicAffixID &from, uint64 &seed);
+	static void SetReforgeOffer(EQ::ItemInstance &inst, EQ::eDynamicAffixID from, uint64 seed);
+	static void ClearReforgeOffer(EQ::ItemInstance &inst);
+	static constexpr const char *REFORGE_OFFER_KEY = "dyn_offer";
+	static constexpr uint32 REFORGE_OPTIONS = 2;
+
+	// The replacements a paid reforge offers for one line of this item
+	std::vector<RolledAffix> GetReforgeOptions(const EQ::ItemInstance &inst, EQ::eDynamicAffixID from, uint64 seed) const;
 
 	// The rolled lines for an item instance; empty if it isn't a dynamic item or hasn't been rolled
 	std::vector<RolledAffix> Roll(const EQ::ItemInstance &inst) const;
@@ -116,7 +159,7 @@ public:
 	// few client packets that send an item ID back (links, item name, preview) can be resolved.
 	static constexpr uint32 DISPLAY_ID_BASE = 0x1000000; // above every real item ID
 	static bool IsDisplayId(uint32 id) { return id >= DISPLAY_ID_BASE; }
-	bool ResolveDisplayId(uint32 display_id, uint32 &item_id, uint64 &seed) const;
+	bool ResolveDisplayId(uint32 display_id, uint32 &item_id, uint64 &seed, std::string &enchant) const;
 	uint32 ResolveItemId(uint32 id) const; // real item ID for a display ID, otherwise unchanged
 
 	// Equipment slot groups used to line up comparable items (paired slots like Ear/Wrist/Finger and
@@ -160,8 +203,9 @@ private:
 	std::unordered_map<std::string, std::string>            m_suffixes; // affix code -> name suffix
 
 	struct DisplayIdEntry {
-		uint32 item_id;
-		uint64 seed;
+		uint32      item_id;
+		uint64      seed;
+		std::string enchant; // custom_data dyn_ench
 	};
 	std::unordered_map<uint32, DisplayIdEntry> m_display_ids;
 

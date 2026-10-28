@@ -1347,6 +1347,18 @@ RULE_BOOL(Custom,   PermanentServerBuffsEnabled,            false,   "Enable or 
 RULE_BOOL(Custom,   GuideAudit,                             true,    "Enable command auditing for guides/GMs of status 80 or higher.")
 RULE_BOOL(Custom,   EnableFabledMobs,                       false,   "Enable Fabled Season globally (true to enable 100% Fabled spawns, false to disable).")
 
+// Platinum and AA sinks: Chronal Tributes, Paragon AAs, reforging dynamic items (zone/nms_chronal_tribute.cpp, zone/nms_paragon.cpp, zone/gm_commands/reforge.cpp)
+RULE_INT(Custom,    ChronalTributeFirstID,					60, "First tribute ID that is a Chronal Tribute. Chronal Tributes only work inside a Greater Rift, and each tribute tier covers one band of rift tiers")
+RULE_INT(Custom,    ChronalTributeLastID,					69, "Last tribute ID that is a Chronal Tribute")
+RULE_INT(Custom,    ChronalTributeBandSize,					100, "Rift tiers per Chronal Tribute tier: tribute tier 1 works in rift tiers 1-100, tier 2 in 101-200, and so on")
+RULE_INT(Custom,    ChronalTributeFavorPerTier,				100, "Favor each Chronal Tribute costs per rift run: this x the rift's tier, charged on entering the rift (or on turning the tribute on inside it)")
+RULE_INT(Custom,    ReforgeNPCID,							1200050, "NPC that #reforge must be used at (target it, within 30 units). 0 = anywhere")
+RULE_INT(Custom,    ReforgePlatBase,						25000, "Platinum for the first reforge of a tier 1 dynamic item; tier N costs this x (2N - 1)")
+RULE_INT(Custom,    ReforgeCurrencyBase,					50, "Alternate currency for the first reforge of a tier 1 dynamic item; tier N costs this x (2N - 1)")
+RULE_INT(Custom,    ReforgeCurrencyID,						2, "Alternate currency #reforge charges (2 = Chronal Shards)")
+RULE_INT(Custom,    ReforgeCostGrowthPct,					25, "Each reforge of the same item costs this much more, in percent of the first")
+RULE_INT(Custom,    ReforgeCostMaxPct,						500, "Reforge costs stop rising at this percent of the first")
+
 RULE_CATEGORY_END()
 
 #undef RULE_CATEGORY

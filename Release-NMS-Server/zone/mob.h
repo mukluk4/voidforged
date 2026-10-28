@@ -1518,6 +1518,7 @@ public:
 	uint32 GetAAByAAID(uint32 aa_id, uint32 *charges = nullptr) const;
 	bool SetAA(uint32 rank_id, uint32 new_value, uint32 charges = 0);
 	void ClearAAs() { aa_ranks.clear(); }
+	const std::unordered_map<uint32, std::pair<uint32, uint32>> &GetAAs() const { return aa_ranks; } // ability id -> (rank value, charges)
 	bool CanUseAlternateAdvancementRank(AA::Rank *rank);
 	bool CanPurchaseAlternateAdvancementRank(AA::Rank *rank, bool check_price, bool check_grant);
 	int GetAlternateAdvancementCooldownReduction(AA::Rank *rank_in);
