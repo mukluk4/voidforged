@@ -1,0 +1,64 @@
+# What build_manifest.py ships from the reference client folder.
+# Patterns are fnmatch globs against the lowercase path relative to the client folder, with / separators.
+# A directory pattern ends in /** to cover everything below it.
+#
+#   exclude <glob>     never shipped, and the patcher never touches it on a player's PC
+#   ifmissing <glob>   shipped for fresh installs only; a player's own copy is never overwritten
+#   delete <path>      removed from players' folders (for files we used to ship)
+# The first rule that matches a path wins.
+
+# Player settings: give new installs a starting copy, never overwrite after that
+ifmissing eqclient.ini
+ifmissing defaults.ini
+ifmissing eqlsuiconfig.ini
+ifmissing voicechat.ini
+ifmissing eqoptions1.opt
+
+# Per-character and per-account files
+exclude *_localeq.ini
+exclude *_multiclass.ini
+exclude *_eqdream.ini
+exclude ui_*.ini
+exclude *_characters.ini
+exclude eqlsplayerdata.ini
+exclude eqlsclient.ini
+exclude nmsloot/**
+exclude nmsimgui/**
+exclude userdata/**
+
+# Logs, crash dumps, screenshots and backups
+exclude logs/**
+exclude screenshots/**
+exclude backup/**
+exclude feature-backup-*/**
+exclude *.log
+exclude *.bak
+exclude *.backup
+exclude *.dmp
+exclude *.voidtmp
+exclude nms_crash.txt
+exclude output.txt
+exclude uierrors.txt
+exclude dbg.txt
+exclude notes.txt
+exclude uifiles/default_borked/**
+
+# Launchers, installers and extras the Voidforged client does not use
+exclude legendsofnorrath/**
+exclude redists/**
+exclude launchpad.*
+exclude launchpad.libs/**
+exclude uninstaller.*
+exclude testeqgame.exe
+exclude eqgame.exe.backup
+exclude 4gb_patch.exe
+exclude fixtimestamps.exe
+exclude imperium numpad fix.exe
+exclude directxtest.exe
+exclude installscript.vdf
+exclude *.pdf
+exclude *.doc
+exclude folder.jpg
+
+# The patcher's own files; the patcher exe is shipped separately for self-update
+exclude voidpatcher.*
