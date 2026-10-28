@@ -59,8 +59,16 @@ On low-memory machines, build one target at a time with limited parallelism
 The server reads its settings from `eqemu_config.json` next to the binaries; that file holds the
 database password and is never committed.
 
-The base setup (database import, quests, client data files, client add-on) is the same as the NMS
-release; see [`Release-NMS-Server/README.md`](Release-NMS-Server/README.md) and
+## Database
+
+`Release-NMS-Server/database/voidforged-content.zip` is a snapshot of the live world content: items,
+spells, NPCs, spawns, merchants, zones, rules, the rift and dynamic item tables and the set bonuses.
+It has no accounts, characters or other player data. To build a fresh server, import the NMS
+`release-peq.zip` first (it creates every table, player tables included), then import this snapshot
+over it. Refresh the snapshot with `python Release-NMS-Server/utils/scripts/dump_content.py` (MariaDB's
+`bin` folder on PATH) and commit the new zip.
+
+The base setup (quests, client data files, client add-on) is the same as the NMS release; see [`Release-NMS-Server/README.md`](Release-NMS-Server/README.md) and
 [`Release-NMS-Client/README.md`](Release-NMS-Client/README.md).
 
 ## Licensing
