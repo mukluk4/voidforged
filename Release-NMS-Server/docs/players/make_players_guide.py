@@ -384,7 +384,7 @@ story += bullets([
     "<b>Always:</b> HP, AC, Mana and/or Endurance (casters Mana, melee Endurance, hybrids both), all regular "
     "stats weighted to the class, all six resists, Spell Damage, Heal Amount and Attack.",
     "<b>Sometimes:</b> regen, Shielding, Avoidance, Accuracy, Stun Resist, Strike Through, Damage Shield, "
-    "Spell Shield, and melee, spell, DoT and heal crits. These can roll 0, and then the piece doesn't have them.",
+    "Spell Shield, and physical, spell, DoT and heal crits. These can roll 0, and then the piece doesn't have them.",
     "<b>Random affixes:</b> 2 to 3 extra lines from your class's list, such as a weapon or defense skill %, "
     "Backstab or Flying Kick damage %, an element's spell damage %, Healing % or an instrument %.",
     "<b>Name:</b> your best random affix names the piece, for example <i>Shadowblade Boots of the Assassin</i>.",
@@ -431,20 +431,22 @@ story.append(table([
     ["Juggernaut", "Warrior", "+250 HP, +15 AC", "+40 AC, +10 HP Regen", "+750 HP, +5 Shielding, +10 Stun Resist"],
     ["Divine Conduit", "Cleric", "+5 Mana Regen, +250 Mana", "+30 WIS, +8% healing", "+10 Mana Regen, +5% Heal Crit"],
     ["Bulwark", "Paladin", "+150 Mana, +200 HP", "+30 AC, +5% healing", "+500 HP, +3 Shielding, +10 Stun Resist"],
-    ["Wildstalker", "Ranger", "+25 Attack, +20 DEX", "+10% Archery", "+5% Melee Crit, +4% Archery Crit"],
+    ["Wildstalker", "Ranger", "+25 Attack, +20 DEX", "+10% Archery", "+5% Physical Crit, +4% Archery Crit"],
     ["Dread Harbinger", "Shadowknight", "+250 HP, +150 Mana", "+10% disease and poison spells, +30 AC", "+500 HP, +5% DoT Crit"],
     ["Verdant Storm", "Druid", "+250 Mana, +5 Mana Regen", "+5% healing, +8% cold and fire spells", "+25 Damage Shield, +5% DoT Crit"],
-    ["Iron Fist", "Monk", "+20 AGI, +25 Attack", "+10% Flying Kick", "+5 Avoidance, +8% Melee Crit"],
-    ["Maestro", "Bard", "+25 CHA, +150 Mana", "+10% all instruments", "+500 HP, +5% Melee Crit, +5 End Regen"],
-    ["Shadowblade", "Rogue", "+25 Attack, +20 DEX", "+10% Backstab", "+9% Melee Crit, +10% Backstab Dmg"],
+    ["Iron Fist", "Monk", "+20 AGI, +25 Attack", "+10% Flying Kick", "+5 Avoidance, +8% Physical Crit"],
+    ["Maestro", "Bard", "+25 CHA, +150 Mana", "+10% all instruments", "+500 HP, +5% Physical Crit, +5 End Regen"],
+    ["Shadowblade", "Rogue", "+25 Attack, +20 DEX", "+10% Backstab", "+9% Physical Crit, +10% Backstab Dmg"],
     ["Spiritcaller", "Shaman", "+200 HP, +250 Mana", "+20 STA, +10% cold, poison, disease spells", "+5% DoT Crit, +5% healing, +10 Mana Regen"],
     ["Lich Lord", "Necromancer", "+300 Mana, +5 Mana Regen", "+10% poison and disease spells", "+10% DoT Crit Dmg, +5% DoT Crit, +10 Mana Regen"],
     ["Archmage", "Wizard", "+300 Mana, +30 INT", "+10% fire, cold, magic spells", "+15% Spell Crit Dmg, +5% Spell Crit"],
     ["Elementalist", "Magician", "+300 Mana, +20 STA", "+10% fire and magic spells", "+5% Spell Crit, +25 Damage Shield"],
     ["Mesmerist", "Enchanter", "+25 CHA, +300 Mana", "+10 Mana Regen, +10% magic spells", "+5 Spell Shield, +5% Spell Crit"],
-    ["Feral Bond", "Beastlord", "+150 Mana, +20 AGI, +20 STR", "+10% Hand to Hand, +10% cold and poison spells", "+8% Melee Crit"],
-    ["Bloodrage", "Berserker", "+25 STR, +250 HP", "+10% Frenzy, +30 Attack", "+10% Melee Crit, +15% Melee Crit Dmg"],
+    ["Feral Bond", "Beastlord", "+150 Mana, +20 AGI, +20 STR", "+10% Hand to Hand, +10% cold and poison spells", "+8% Physical Crit"],
+    ["Bloodrage", "Berserker", "+25 STR, +250 HP", "+10% Frenzy, +30 Attack", "+10% Physical Crit, +15% Physical Crit Dmg"],
 ], [1.05 * inch, 0.9 * inch, 1.35 * inch, 1.6 * inch, CW - 4.9 * inch], bold_first_col=True))
+story.append(P("Physical Crit counts for every weapon attack: melee, archery, throwing, kicks, Backstab and the "
+               "rest. Archery Crit adds to it for arrows only.", "small"))
 
 story.append(CondPageBreak(2.5 * inch))
 story.append(P("Jewelry sets: 3, 6 and 9 pieces", "h2"))

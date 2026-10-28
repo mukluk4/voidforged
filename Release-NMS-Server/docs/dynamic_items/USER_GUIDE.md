@@ -236,7 +236,7 @@ skills 3–10%, ability damage 5–18%, spell/heal/bard 3–15%.
   Accuracy 0-23 (hybrids 0-15) and HP regen 0-11 (casters 0-3).
 * **Crits** can roll 0 too and every class has all of them, weighted by use. Crit rates max 6 / 4 / 2,
   crit damage max 10 / 6 / 3 (strong / medium / weak). Strong: DD crit WIZ/MAG, DoT crit NEC/DRU,
-  heal crits CLR/DRU/SHM, melee crit WAR/MNK/ROG/BER, archery crit RNG.
+  heal crits CLR/DRU/SHM, physical crit WAR/MNK/ROG/BER, archery crit RNG.
 
 **Per-slot strength:** every slot rolls the same ranges; use the item's `stat_multiplier` to make
 some slots stronger (e.g. 1.1 for chest and legs, 0.9 for ears and rings). The multiplier scales
@@ -300,7 +300,7 @@ show in `#dyninfo` and in the **Advanced Character Stats** window.
 | `spell_crit_chance_pct`, `spell_crit_dmg_pct` | + direct damage spell crit rate / crit damage |
 | `dot_crit_chance_pct`, `dot_crit_dmg_pct` | + DoT crit rate / crit damage (the stats window only shows DoT crit damage above 100) |
 | `heal_crit_chance_pct`, `hot_crit_chance_pct` | + heal / heal-over-time crit rate |
-| `melee_crit_chance_pct`, `melee_crit_dmg_pct` | + melee crit rate (all skills) / crit damage |
+| `melee_crit_chance_pct`, `melee_crit_dmg_pct` | + physical crit rate / crit damage (all skills: melee, archery, throwing and special attacks; shown as "Physical Crit") |
 | `archery_crit_chance_pct` | + archery crit rate |
 
 **Skill %**: raises the skill's value by that percent. On this server weapon skill drives both
