@@ -12277,11 +12277,28 @@ std::vector<int> Client::GetLearnableDisciplines(uint8 min_level, uint8 max_leve
 			continue;
 		}
 
-		if (max_level && spells[spell_id].classes[m_pp.class_ - 1] > max_level) {
-			continue;
+		// Multiclass characters all store Bard as their base class, so check every class they have
+		const uint32 classes_bits = GetClassesBits();
+		bool any_class_usable = false;
+		for (uint8 class_id = Class::Warrior; class_id <= Class::PLAYER_CLASS_COUNT; ++class_id) {
+			if (!(classes_bits & GetPlayerClassBit(class_id))) {
+				continue;
+			}
+
+			const uint8 class_level = spells[spell_id].classes[class_id - 1];
+			if (max_level && class_level > max_level) {
+				continue;
+			}
+
+			if (min_level > 1 && class_level < min_level) {
+				continue;
+			}
+
+			any_class_usable = true;
+			break;
 		}
 
-		if (min_level > 1 && spells[spell_id].classes[m_pp.class_ - 1] < min_level) {
+		if (!any_class_usable) {
 			continue;
 		}
 
