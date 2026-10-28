@@ -26,7 +26,7 @@
     {"block": 1300, "name": "Pendant", "look_item": 995,   "stat_multiplier": 0.6},
     {"block": 1400, "name": "Mantle",  "look_item": 1005,  "stat_multiplier": 0.6},
     {"block": 1500, "name": "Cloak",   "look_item": 1006,  "stat_multiplier": 0.6},
-    {"block": 1600, "name": "Girdle",  "look_item": 1007,  "stat_multiplier": 0.4},
+    {"block": 1600, "name": "Girdle",  "look_item": 1007,  "stat_multiplier": 0.4, "fields": {"haste": 68}},
     {"block": 1700, "name": "Ring",    "look_item": 1454,  "stat_multiplier": 0.4}
   ],
 
@@ -37,6 +37,11 @@
     {"key": "dodge_9",       "name": "Improved Dodge IX",           "copy": 20514, "effects": {"1": [174, 90, 0]}},
     {"key": "cleave_10",     "name": "Cleave X",                    "copy": 20516, "effects": {"1": [169, 400, 0], "2": [169, 400, 0], "3": [169, 400, 0], "4": [169, 400, 0]}},
     {"key": "cleave_11",     "name": "Cleave XI",                   "copy": 20516, "effects": {"1": [169, 440, 0], "2": [169, 440, 0], "3": [169, 440, 0], "4": [169, 440, 0]}},
+    {"key": "hail_arrows_1", "name": "Hail of Arrows I", "id": 43021, "copy": 8020, "effects": {"1": [193, 55, 10000], "2": [193, 55, 10000]}},
+    {"key": "hail_arrows_2", "name": "Hail of Arrows II", "id": 43022, "copy": 8020, "effects": {"1": [193, 83, 10000], "2": [193, 83, 10000]}},
+    {"key": "hail_arrows_3", "name": "Hail of Arrows III", "id": 43023, "copy": 8020, "effects": {"1": [193, 110, 10000], "2": [193, 110, 10000]}},
+    {"key": "hail_arrows_4", "name": "Hail of Arrows IV", "id": 43024, "copy": 8020, "effects": {"1": [193, 138, 10000], "2": [193, 138, 10000]}},
+    {"key": "hail_arrows_5", "name": "Hail of Arrows V", "id": 43025, "copy": 8020, "effects": {"1": [193, 165, 10000], "2": [193, 165, 10000]}},
     {"key": "sharp_10",      "name": "Sharpshooting X",             "copy": 20518, "effects": {"1": [184, 30, 7], "2": [184, 30, 51]}},
     {"key": "sharp_11",      "name": "Sharpshooting XI",            "copy": 20518, "effects": {"1": [184, 33, 7], "2": [184, 33, 51]}},
     {"key": "double_9",      "name": "Double Attack Tribute IX",    "copy": 12428, "effects": {"1": [177, 24, 0]}},
@@ -57,7 +62,13 @@
     {"key": "symp_light_2", "name": "Sympathetic Healing Light II",  "copy": 24431, "effects": {"1": [383, 100, 23899]}},
     {"key": "symp_light_3", "name": "Sympathetic Healing Light III", "copy": 24431, "effects": {"1": [383, 100, 33276]}},
     {"key": "symp_light_4", "name": "Sympathetic Healing Light IV",  "copy": 24431, "effects": {"1": [383, 100, 33277]}},
-    {"key": "symp_light_5", "name": "Sympathetic Healing Light V",   "copy": 24431, "effects": {"1": [383, 100, 33278]}}
+    {"key": "symp_light_5", "name": "Sympathetic Healing Light V",   "copy": 24431, "effects": {"1": [383, 100, 33278]}},
+
+    {"key": "pet_power_1", "name": "Void Conduit I", "copy": 4405, "effects": {"1": [167, 30, 0], "2": [134, 85, 0], "3": [142, 1, 0]}},
+    {"key": "pet_power_2", "name": "Void Conduit II", "copy": 4405, "effects": {"1": [167, 40, 0], "2": [134, 85, 0], "3": [142, 1, 0]}},
+    {"key": "pet_power_3", "name": "Void Conduit III", "copy": 4405, "effects": {"1": [167, 50, 0], "2": [134, 85, 0], "3": [142, 1, 0]}},
+    {"key": "pet_power_4", "name": "Void Conduit IV", "copy": 4405, "effects": {"1": [167, 60, 0], "2": [134, 85, 0], "3": [142, 1, 0]}},
+    {"key": "pet_power_5", "name": "Void Conduit V", "copy": 4405, "effects": {"1": [167, 70, 0], "2": [134, 85, 0], "3": [142, 1, 0]}}
   ],
 
   "_ladders": "Spells for gear tiers 1-5: an existing spell id, or a custom_spells key",
@@ -79,18 +90,20 @@
     "force_magic":    [23718, 23719, 33228, 33229, 33230],
     "venom":          [23778, 23779, 33243, 33244, 33245],
     "burst_ice":      [23758, 23759, 33238, 33239, 33240],
+    "hail_arrows":    ["hail_arrows_1", "hail_arrows_2", "hail_arrows_3", "hail_arrows_4", "hail_arrows_5"],
     "symp_light":     ["symp_light_1", "symp_light_2", "symp_light_3", "symp_light_4", "symp_light_5"],
     "symp_corruption":[24417, 33351, 33352, 33353, 33354],
     "symp_ice":       [24377, 24378, 33336, 33337, 33338],
-    "symp_magic":     [24351, 24352, 33326, 33327, 33328]
+    "symp_magic":     [24351, 24352, 33326, 33327, 33328],
+    "pet_power":      ["pet_power_1", "pet_power_2", "pet_power_3", "pet_power_4", "pet_power_5"]
   },
 
-  "_nonvis_bonuses": "Per class: 3 pieces = affix % lines (tier 1 value, x tier mult); 6 = worn ladder; 9 = proc ladder (proc = melee weapon proc, sympathetic = spell-cast proc)",
+  "_nonvis_bonuses": "Per class: 3 pieces = affix % lines (tier 1 value, x tier mult); 6 = worn ladder (worn_type focus: a focus effect such as pet power, checked like an item focus); 9 = proc ladder (proc = melee weapon proc, sympathetic = spell-cast proc)",
   "nonvis_bonuses": {
     "1":  {"three": {"skill_defense_pct": 4, "skill_parry_pct": 3},                          "worn": "parry_block", "proc": "blessed_rune",   "proc_type": "proc"},
     "2":  {"three": {"heal_amount_pct": 4, "heal_crit_chance_pct": 3},                       "worn": "divine",      "proc": "symp_light",     "proc_type": "sympathetic"},
     "3":  {"three": {"heal_amount_pct": 4, "heal_crit_chance_pct": 3},                       "worn": "parry_block", "proc": "remote_heal",    "proc_type": "proc"},
-    "4":  {"three": {"skill_archery_pct": 4, "archery_crit_chance_pct": 3},                  "worn": "sharp",       "proc": "burst_ice",      "proc_type": "proc"},
+    "4":  {"three": {"skill_archery_pct": 4, "archery_crit_chance_pct": 3},                  "worn": "sharp",       "proc": "hail_arrows",    "proc_type": "proc"},
     "5":  {"three": {"spell_disease_pct": 4, "spell_poison_pct": 4},                         "worn": "ferocity",    "proc": "vampiric",       "proc_type": "proc"},
     "6":  {"three": {"spell_fire_pct": 4, "spell_cold_pct": 4},                              "worn": "divine",      "proc": "symp_light",     "proc_type": "sympathetic"},
     "7":  {"three": {"flying_kick_dmg_pct": 4, "skill_h2h_pct": 3},                          "worn": "dodge",       "proc": "force_magic",    "proc_type": "proc"},
@@ -98,11 +111,11 @@
                                                                                               "worn": "accuracy",    "proc": "prismatic",      "proc_type": "proc"},
     "9":  {"three": {"backstab_dmg_pct": 4, "skill_pierce_pct": 3},                          "worn": "cleave",      "proc": "venom",          "proc_type": "proc"},
     "10": {"three": {"spell_cold_pct": 4, "spell_poison_pct": 4, "spell_disease_pct": 4},    "worn": "divine",      "proc": "symp_light",     "proc_type": "sympathetic"},
-    "11": {"three": {"spell_poison_pct": 4, "spell_disease_pct": 4},                         "worn": "arcane",      "proc": "symp_corruption","proc_type": "sympathetic"},
+    "11": {"three": {"spell_poison_pct": 4, "spell_disease_pct": 4},                         "worn": "pet_power",   "worn_type": "focus",      "proc": "symp_corruption","proc_type": "sympathetic"},
     "12": {"three": {"spell_fire_pct": 4, "spell_cold_pct": 4},                              "worn": "arcane",      "proc": "symp_ice",       "proc_type": "sympathetic"},
-    "13": {"three": {"spell_fire_pct": 4, "spell_magic_pct": 4},                             "worn": "arcane",      "proc": "symp_magic",     "proc_type": "sympathetic"},
-    "14": {"three": {"spell_magic_pct": 4, "spell_crit_chance_pct": 3},                      "worn": "arcane",      "proc": "symp_magic",     "proc_type": "sympathetic"},
-    "15": {"three": {"skill_h2h_pct": 4, "spell_cold_pct": 3},                               "worn": "double",      "proc": "venom",          "proc_type": "proc"},
+    "13": {"three": {"spell_fire_pct": 4, "spell_magic_pct": 4},                             "worn": "pet_power",   "worn_type": "focus",      "proc": "symp_magic",     "proc_type": "sympathetic"},
+    "14": {"three": {"spell_magic_pct": 4, "spell_crit_chance_pct": 3},                      "worn": "pet_power",   "worn_type": "focus",      "proc": "symp_magic",     "proc_type": "sympathetic"},
+    "15": {"three": {"skill_h2h_pct": 4, "spell_cold_pct": 3},                               "worn": "pet_power",   "worn_type": "focus",      "proc": "venom",          "proc_type": "proc"},
     "16": {"three": {"frenzy_dmg_pct": 4, "skill_2hs_pct": 3, "skill_2hb_pct": 3},           "worn": "ferocity",    "proc": "burst_ice",      "proc_type": "proc"}
   },
 

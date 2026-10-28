@@ -50,18 +50,19 @@ trades the 6/9 bonuses for extra 3-piece bonuses).
 | Rogue | +4% Backstab damage, +3% piercing | Cleave VII -> XI* | Strike of Venom IX -> XIII |
 | Berserker | +4% Frenzy damage, +3% 2H | Ferocity VII -> XI | Burst of Ice IX -> XIII |
 | Ranger | +4% archery, +3% archery crit | Sharpshooting VII -> XI* | Burst of Ice IX -> XIII |
-| Beastlord | +4% hand to hand, +3% cold spells | Double Attack V -> IX* | Strike of Venom IX -> XIII |
+| Beastlord | +4% hand to hand, +3% cold spells | Void Conduit I -> V (pet focus)* | Strike of Venom IX -> XIII |
 | Cleric | +4% heal amount, +3% heal crit | Divine Insight I -> V* | Sympathetic Healing Light I -> V* (Healing Burst IX -> XIII on self) |
 | Druid | +4% fire and cold spells | Divine Insight I -> V* | Sympathetic Healing Light I -> V* |
 | Shaman | +4% cold, poison and disease spells | Divine Insight I -> V* | Sympathetic Healing Light I -> V* |
-| Necromancer | +4% poison and disease spells | Arcane Insight I -> V* | Sympathetic Force of Corruption X -> XIV |
+| Necromancer | +4% poison and disease spells | Void Conduit I -> V (pet focus)* | Sympathetic Force of Corruption X -> XIV |
 | Wizard | +4% fire and cold spells | Arcane Insight I -> V* | Sympathetic Burst of Ice IX -> XIII |
-| Magician | +4% fire and magic spells | Arcane Insight I -> V* | Sympathetic Force of Magic IX -> XIII |
-| Enchanter | +4% magic spells, +3% spell crit | Arcane Insight I -> V* | Sympathetic Force of Magic IX -> XIII |
+| Magician | +4% fire and magic spells | Void Conduit I -> V (pet focus)* | Sympathetic Force of Magic IX -> XIII |
+| Enchanter | +4% magic spells, +3% spell crit | Void Conduit I -> V (pet focus)* | Sympathetic Force of Magic IX -> XIII |
 
 \* New server-side spell rows (not in the client spell file): extra worn ranks continue each family's
 step; Divine Insight (heal crit + mana regen) and Arcane Insight (spell crit damage + mana regen) are
-new worn families; Sympathetic Healing Light I-V are new triggers (SPA 383, detrimental damage spells)
+new worn families; Void Conduit I-V are pet focus spells (pet power 30/40/50/60/70, pet spells up to level 85, best-wins
+with item pet focus; power past a pet's strongest pets row scales it, rule Pets:ScaleExcessPetPower); Sympathetic Healing Light I-V are new triggers (SPA 383, detrimental damage spells)
 pointing at existing Healing Burst IX-XIII. Test in game that the client ignores unknown worn spells
 before building on it. Procs themselves stay existing spells (the client must know them).
 

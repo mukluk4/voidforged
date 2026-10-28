@@ -395,6 +395,14 @@ lines in a comparison) is split into pages: the title shows "(1/2)", and chat ge
 Paired slots (Ear, Wrist, Finger, and Primary/Secondary as "Weapon") are one group, compared
 against the first one you're wearing. Random affixes are marked with `*`.
 
+### `#reforge` (all players)
+
+Replaces one random (`*`) line of a carried dynamic item, for platinum and Chronal Shards.
+`#reforge` lists the items, `#reforge [slot]` shows the lines and the price.
+Paying (`#reforge [slot] [line]`) and choosing (`take 1`, `take 2` or `keep`) need the Chronal Artificer in The Void targeted.
+Only one line per item can ever be reforged, and each reforge of the same item costs more.
+The choice is saved on the item (`dyn_offer`), so zoning doesn't lose it. See `utils/scripts/rift/README.md` for costs and rules.
+
 ### `#dynitem` (GMs, status 200+)
 Acts on your target if you have a player targeted, otherwise on you.
 

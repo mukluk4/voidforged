@@ -15297,7 +15297,7 @@ void LoadArmorSetBonuses() {
 			bonus.spell_id   = static_cast<uint16>(atoi(row[6]));
 			bonus.spell_type = static_cast<uint8>(atoi(row[7]));
 
-			if (bonus.spell_id && (!IsValidSpell(bonus.spell_id) || bonus.spell_type < ArmorSetSpellWorn || bonus.spell_type > ArmorSetSpellSympathetic)) {
+			if (bonus.spell_id && (!IsValidSpell(bonus.spell_id) || bonus.spell_type < ArmorSetSpellWorn || bonus.spell_type > ArmorSetSpellFocus)) {
 				LogError("armor_set_bonuses set [{}] has invalid spell [{}] type [{}], skipping", set_id, bonus.spell_id, bonus.spell_type);
 				continue;
 			}
@@ -15380,6 +15380,7 @@ void Client::CheckArmorSetBonuses(StatBonuses* itembonuses) {
 	// Spell bonuses are rebuilt on every recalculation; weapon procs are synced after the loop
 	std::set<uint16> wanted_procs;
 	m_set_bonus_sympathetic.clear();
+	m_set_bonus_focus.clear();
 
 	// Process stats and state transitions for each active set
 	for (const auto& [set_id, piece_count] : equipped_set_counts) {
@@ -15467,6 +15468,16 @@ void Client::CheckArmorSetBonuses(StatBonuses* itembonuses) {
 							case ArmorSetSpellSympathetic:
 								// Checked by GetSympatheticFocusEffect on each damage or heal cast
 								m_set_bonus_sympathetic.push_back(bonus.spell_id);
+								break;
+							case ArmorSetSpellFocus:
+								// GetFocusEffect only looks at item focus when the focus type is flagged here
+								m_set_bonus_focus.push_back(bonus.spell_id);
+								for (int i = 0; i < EFFECT_COUNT; i++) {
+									const auto focus = IsFocusEffect(bonus.spell_id, i);
+									if (focus) {
+										itembonuses->FocusEffects[focus] = static_cast<uint8>(spells[bonus.spell_id].effect_id[i]);
+									}
+								}
 								break;
 						}
 						continue;

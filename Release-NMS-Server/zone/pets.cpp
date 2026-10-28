@@ -321,16 +321,24 @@ void Mob::MakePoweredPet(uint16 spell_id, const char* pettype, int16 petpower,
 	auto npc_type = new NPCType;
 	memcpy(npc_type, base, sizeof(NPCType));
 
-	// If pet power is set to -1 in the DB, use stat scaling
-	if ((IsClient() || IsBot()) && record.petpower == -1)
+	// If pet power is set to -1 in the DB, use stat scaling. With Pets:ScaleExcessPetPower, power past the
+	// strongest pets row for this pet type scales that row's pet the same way (only the excess counts)
+	int16 scaled_power = 0;
+	if (record.petpower == -1) {
+		scaled_power = act_power;
+	} else if (RuleB(Pets, ScaleExcessPetPower) && act_power > record.petpower) {
+		scaled_power = act_power - record.petpower;
+	}
+
+	if ((IsClient() || IsBot()) && scaled_power > 0)
 	{
-		float scale_power = (float)act_power / 100.0f;
+		float scale_power = (float)scaled_power / 100.0f;
 		if(scale_power > 0)
 		{
 			npc_type->max_hp *= (1 + scale_power);
 			npc_type->current_hp = npc_type->max_hp;
 			npc_type->AC *= (1 + scale_power);
-			npc_type->level += 1 + ((int)act_power / 25) > npc_type->level + RuleR(Pets, PetPowerLevelCap) ? RuleR(Pets, PetPowerLevelCap) : 1 + ((int)act_power / 25); // gains an additional level for every 25 pet power
+			npc_type->level += 1 + ((int)scaled_power / 25) > npc_type->level + RuleR(Pets, PetPowerLevelCap) ? RuleR(Pets, PetPowerLevelCap) : 1 + ((int)scaled_power / 25); // gains an additional level for every 25 pet power
 			npc_type->min_dmg = (npc_type->min_dmg * (1 + (scale_power / 2)));
 			npc_type->max_dmg = (npc_type->max_dmg * (1 + (scale_power / 2)));
 			npc_type->size = npc_type->size * (1 + (scale_power / 2)) > npc_type->size * 3 ? npc_type->size * 3 : npc_type-> size * (1 + (scale_power / 2));

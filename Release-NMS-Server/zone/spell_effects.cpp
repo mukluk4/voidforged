@@ -7323,6 +7323,37 @@ int64 Mob::GetFocusEffect(focusType type, uint16 spell_id, Mob *caster, bool fro
 			}
 		}
 
+		if (IsClient()) {
+			// Armor set bonus focus spells compete best-wins with item focus. There is no item
+			// behind them, so a winning set focus clears UsedItem and shows no focus message.
+			bool set_focus_used = false;
+			for (const auto set_focus : CastToClient()->GetSetBonusFocusSpells()) {
+				if (rand_effectiveness) {
+					focus_max = CalcFocusEffect(type, set_focus, spell_id, true);
+					if ((focus_max > 0 && focus_max_real >= 0 && focus_max > focus_max_real) ||
+						(focus_max < 0 && focus_max < focus_max_real)) {
+						focus_max_real = focus_max;
+						UsedItem       = nullptr;
+						UsedFocusID    = set_focus;
+						set_focus_used = true;
+					}
+				}
+				else {
+					Total = CalcFocusEffect(type, set_focus, spell_id);
+					if ((Total > 0 && realTotal >= 0 && Total > realTotal) || (Total < 0 && Total < realTotal)) {
+						realTotal      = Total;
+						UsedItem       = nullptr;
+						UsedFocusID    = set_focus;
+						set_focus_used = true;
+					}
+				}
+			}
+
+			if (set_focus_used && rand_effectiveness && focus_max_real != 0) {
+				realTotal = CalcFocusEffect(type, UsedFocusID, spell_id);
+			}
+		}
+
 		if (UsedItem && rand_effectiveness && focus_max_real != 0) {
 			realTotal = CalcFocusEffect(type, UsedFocusID, spell_id);
 		}

@@ -279,8 +279,10 @@ public:
 	std::unordered_map<uint32, uint32> CountEquippedArmorSetPieces(); // set id -> pieces worn that count for this character
 	std::unordered_map<uint32, uint32> m_active_armor_set_tiers;
 	std::vector<uint16> m_set_bonus_sympathetic; // active set bonus spell-cast procs, rebuilt by CheckArmorSetBonuses
+	std::vector<uint16> m_set_bonus_focus;       // active set bonus focus spells, rebuilt by CheckArmorSetBonuses
 	std::set<uint16>    m_set_bonus_procs;       // weapon procs added by set bonuses, so they can be removed
 	const std::vector<uint16> &GetSetBonusSympatheticSpells() const { return m_set_bonus_sympathetic; }
+	const std::vector<uint16> &GetSetBonusFocusSpells() const { return m_set_bonus_focus; }
 	EQ::DynamicItemBonuses dynamic_item_bonuses;
 	void ReconnectUCS();
 	void RecordStats();
@@ -2703,6 +2705,7 @@ enum ArmorSetSpellType : uint8 {
 	ArmorSetSpellWorn        = 1, // applied like an item worn effect
 	ArmorSetSpellMeleeProc   = 2, // weapon proc while the bonus is active
 	ArmorSetSpellSympathetic = 3, // spell-cast proc, checked like an item focus
+	ArmorSetSpellFocus       = 4, // focus effect (pet power, etc.), checked like an equipped item's focus
 };
 
 // --- Global Map Declarations ---

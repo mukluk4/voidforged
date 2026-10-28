@@ -198,8 +198,8 @@
       },
       {
         "pieces": 8,
-        "value": 15,
-        "stat_id": 7
+        "value": 5,
+        "affix": "melee_crit_chance_pct"
       },
       {
         "pieces": 8,
@@ -304,13 +304,8 @@
       },
       {
         "pieces": 8,
-        "value": 3,
+        "value": 8,
         "affix": "melee_crit_chance_pct"
-      },
-      {
-        "pieces": 8,
-        "value": 15,
-        "stat_id": 7
       }
     ],
     "8": [
@@ -356,8 +351,8 @@
       },
       {
         "pieces": 8,
-        "value": 15,
-        "stat_id": 7
+        "value": 5,
+        "affix": "melee_crit_chance_pct"
       },
       {
         "pieces": 8,
@@ -383,12 +378,7 @@
       },
       {
         "pieces": 8,
-        "value": 15,
-        "stat_id": 7
-      },
-      {
-        "pieces": 8,
-        "value": 4,
+        "value": 9,
         "affix": "melee_crit_chance_pct"
       },
       {
@@ -615,12 +605,7 @@
       },
       {
         "pieces": 8,
-        "value": 15,
-        "stat_id": 7
-      },
-      {
-        "pieces": 8,
-        "value": 3,
+        "value": 8,
         "affix": "melee_crit_chance_pct"
       }
     ],
@@ -647,12 +632,7 @@
       },
       {
         "pieces": 8,
-        "value": 20,
-        "stat_id": 7
-      },
-      {
-        "pieces": 8,
-        "value": 5,
+        "value": 10,
         "affix": "melee_crit_chance_pct"
       },
       {
