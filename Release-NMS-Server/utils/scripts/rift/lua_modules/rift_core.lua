@@ -71,11 +71,32 @@ function rift.key_tier(instance_id)  return "gr_tier_"   .. instance_id end
 function rift.key_start(instance_id) return "gr_start_"  .. instance_id end
 function rift.key_active(char_id)    return "gr_active_" .. char_id end
 function rift.key_deepest(char_id)   return "gr_deepest_" .. char_id end -- no expiry: progression
+function rift.key_state(instance_id) return "gr_state_"  .. instance_id end -- progress, so a zone crash doesn't reset it
 
 -- ----------------------------------------------------------------------------
 -- Per-instance state
 -- ----------------------------------------------------------------------------
 local state = { instance_id = -1 }
+
+-- "x,y,z,h" <-> { x, y, z, h }
+local function loc_string(loc) return loc and string.format("%.1f,%.1f,%.1f,%.1f", loc[1], loc[2], loc[3], loc[4]) or "" end
+local function parse_loc(s)
+    local x, y, z, h = (s or ""):match("^([^,]+),([^,]+),([^,]+),([^,]+)$")
+    return x and { tonumber(x), tonumber(y), tonumber(z), tonumber(h) } or nil
+end
+
+-- Saved as "key=value;..." under gr_state_<instance id>, expiring with the instance
+local function save_state()
+    local pylons = {}
+    for threshold in pairs(state.pylons_done) do pylons[#pylons + 1] = tostring(threshold) end
+    local value = string.format("progress=%d;step=%d;pylons=%s;boss=%s;over=%d;portal=%s",
+        math.floor(state.progress), state.last_step, table.concat(pylons, ","), loc_string(state.boss_loc),
+        state.is_over and 1 or 0, loc_string(state.portal_loc))
+    local expires = state.start_time + rift.TIME_LIMIT + rift.INSTANCE_GRACE - os.time()
+    if expires > 0 then
+        eq.set_data(rift.key_state(state.instance_id), value, tostring(expires))
+    end
+end
 
 local function load_state(instance_id)
     state = {
@@ -85,11 +106,31 @@ local function load_state(instance_id)
         progress      = 0,
         last_step     = 0,
         is_active     = false,
+        is_over       = false,
         boss_spawned  = false,
+        boss_loc      = nil,
+        portal_loc    = nil,
         allow_spawn   = false,
         pylons_done   = {},
         warnings_done = {},
     }
+
+    -- After a zone crash or restart, pick up where the rift left off
+    local saved = {}
+    for k, v in (eq.get_data(rift.key_state(instance_id)) or ""):gmatch("(%w+)=([^;]*)") do saved[k] = v end
+    state.progress  = tonumber(saved.progress) or 0
+    state.last_step = tonumber(saved.step) or 0
+    for threshold in (saved.pylons or ""):gmatch("%d+") do state.pylons_done[tonumber(threshold)] = true end
+    state.boss_loc     = parse_loc(saved.boss)
+    state.boss_spawned = state.boss_loc ~= nil
+    state.is_over      = saved.over == "1"
+    state.portal_loc   = parse_loc(saved.portal)
+
+    -- Time warnings already past stay quiet
+    local remaining = state.start_time + rift.TIME_LIMIT - os.time()
+    for _, t in ipairs(TIME_WARNINGS) do
+        if remaining < t then state.warnings_done[t] = true end
+    end
 end
 
 local function ensure_state()
@@ -218,10 +259,38 @@ end
 -- ----------------------------------------------------------------------------
 function rift.start()
     ensure_state()
+
+    -- Cleared or failed before a zone restart: just bring the way out back
+    if state.is_over then
+        local p = state.portal_loc
+        if p and not eq.get_entity_list():IsMobSpawnedByNpcTypeID(rift.NPC.PORTAL) then
+            eq.spawn2(rift.NPC.PORTAL, 0, 0, p[1], p[2], p[3], p[4])
+        end
+        return false
+    end
+
     local remaining = rift.remaining()
     if remaining <= 0 then return false end
 
     state.is_active = true
+
+    -- Resumed after a zone restart with the Guardian already called: bring it back if it didn't return
+    if state.boss_spawned then
+        local b = state.boss_loc
+        if not eq.get_entity_list():IsMobSpawnedByNpcTypeID(rift.NPC.GUARDIAN) then
+            eq.spawn2(rift.NPC.GUARDIAN, 0, 0, b[1], b[2], b[3], b[4])
+        end
+        rift.announce(15, string.format("The Fracture holds. Defeat the Rift Guardian! %d minute(s) remain.",
+            math.ceil(remaining / 60)))
+        return true
+    end
+
+    if state.progress > 0 then
+        rift.announce(15, string.format("The Fracture holds. Greater Rift Tier %d resumes at %d%% with %d minute(s) left.",
+            state.tier, rift.percent(), math.ceil(remaining / 60)))
+        return true
+    end
+
     rift.announce(15, string.format("Greater Rift Tier %d initiated! The Chronal Fabric will hold for %d minute(s).",
         state.tier, math.ceil(remaining / 60)))
     return true
@@ -274,10 +343,13 @@ function rift.add_progress(amount, x, y, z, h)
         state.last_step = step
         rift.announce(15, string.format("Greater Rift progress: %d%%", step * PROGRESS_STEP))
     end
+    save_state()
 end
 
 function rift.spawn_guardian(x, y, z, h)
     state.boss_spawned = true
+    state.boss_loc = { x, y, z, h }
+    save_state()
     rift.announce(15, "An Anachronism tears through the Fabric! Defeat the Rift Guardian to seal the Rift!")
 
     -- Clear the remaining trash and any unclaimed pylons
@@ -312,18 +384,24 @@ function rift.complete(x, y, z, h)
 
     eq.spawn2(rift.NPC.PORTAL, 0, 0, x + 5, y + 5, z, h)
     rift.announce(15, "A rift portal leading back to The Void has opened!")
+    state.is_over = true
+    state.portal_loc = { x + 5, y + 5, z, h }
+    save_state()
 end
 
 function rift.fail()
     state.is_active = false
+    state.is_over = true
     rift.announce(13, string.format("The Rift's energy dissipates... You failed to complete the Rift in time. (Reached %d%%)", rift.percent()))
 
     -- Portal so nobody is stuck waiting for the instance to expire
     local client = first_client()
     if client then
-        eq.spawn2(rift.NPC.PORTAL, 0, 0, client:GetX() + 5, client:GetY() + 5, client:GetZ(), client:GetHeading())
+        state.portal_loc = { client:GetX() + 5, client:GetY() + 5, client:GetZ(), client:GetHeading() }
+        eq.spawn2(rift.NPC.PORTAL, 0, 0, state.portal_loc[1], state.portal_loc[2], state.portal_loc[3], state.portal_loc[4])
         rift.announce(15, "A rift portal leading back to The Void has opened!")
     end
+    save_state()
 end
 
 -- Called once per player in the instance on a clear. Pays alternate currency
