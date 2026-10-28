@@ -31,7 +31,8 @@ sub EVENT_ENTERZONE {
 
 	plugin::CommonCharacterUpdate($client);
 
-	if (!plugin::is_eligible_for_zone($client, $zonesn)) {
+	# Greater Rifts can be in zones from later expansions; the rift itself is the gate
+	if (!InGreaterRift() && !plugin::is_eligible_for_zone($client, $zonesn)) {
 		$client->Message(4, "Your vision blurs. You lose conciousness and wake up in a familiar place.");
 		$client->MovePC(151, 185, -835, 4, 390); # Bazaar Safe Location.
     }
@@ -150,7 +151,7 @@ sub EVENT_CONNECT {
         plugin::dispatch_popup("welcome");
     }
 
-    if (!plugin::is_eligible_for_zone($client, $zonesn)) {
+    if (!InGreaterRift() && !plugin::is_eligible_for_zone($client, $zonesn)) {
 		$client->Message(4, "Your vision blurs. You lose conciousness and wake up in a familiar place.");
 		$client->MovePC(151, 185, -835, 4, 390); # Bazaar Safe Location.
 	}
@@ -796,6 +797,11 @@ sub UpdateDayNightCycle {
 }
 
 # NMS: Plane of Time access (account-wide Maelin flag) unlocks The Void
+# A Greater Rift instance (the rift sets gr_tier_<instance id> when it opens; see rift_core.lua is_rift)
+sub InGreaterRift {
+	return ($instanceid > 0 && quest::get_data("gr_tier_$instanceid") ne '');
+}
+
 sub HasVoidAccess {
 	my $c = shift;
 	return 1 if $VOID_ACCESS_BUCKET eq '';

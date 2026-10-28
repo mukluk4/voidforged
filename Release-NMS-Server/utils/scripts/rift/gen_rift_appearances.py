@@ -13,7 +13,9 @@ mysql = r'C:\Program Files\MariaDB 12.3\bin\mysql.exe'
 
 ZONES = ['codecay', 'sebilis', 'chardok',
          'befallen', 'karnor', 'mistmoore', 'fearplane', 'cazicthule', 'charasis', 'permafrost',
-         'sleeper', 'velketor', 'hateplaneb', 'akheva', 'griegsend']
+         'sleeper', 'hateplaneb', 'akheva', 'griegsend',
+         'dreadspire', 'soldunga', 'soldungb', 'kael', 'oldkaesoraa', 'anguish', 'frostcrypt',
+         'convorteum', 'kaesora', 'somnium', 'riftseekers', 'chapterhouse', 'ashengate']
 
 # The client's Resources/GlobalLoad.txt loads these zones' whole model files (<zone>_chr) in every
 # zone, so every creature that spawns in them renders anywhere
@@ -134,9 +136,9 @@ for race, name, cnt in query(f"SELECT race, name, COUNT(*) FROM npc_types WHERE 
         any_names[int(race)][n] += int(cnt)
 
 
-def pick(zone_looks, zone_names, race):
-    # A Guardian look is never a regular or elite mob anywhere, so the Guardian always stands out
-    if race in BOSS_RACES:
+def pick(zone_looks, zone_names, race, boss_races):
+    # A Guardian look is never a regular or elite mob where that Guardian can appear, so it always stands out
+    if race in boss_races:
         return None
     if not zone_names[race]:
         zone_names[race] = any_names[race]
@@ -177,7 +179,11 @@ for zone, race, gender, texture, helm, size, name, level in boss_rows:
 for zone, entries in CURATED_BOSSES.items():
     bosses[zone] = entries
 
+# The global pool shows up in every zone, so it leaves out every zone's Guardian looks; a zone's own pool
+# leaves out its own plus the curated (.eqg) Guardian models, which stay unique to Guardians everywhere
+# (one zone's named boss race can still be another zone's trash)
 BOSS_RACES = {b['race'] for zone in ZONES for b in bosses[zone]}
+CURATED_RACES = {b['race'] for entries in CURATED_BOSSES.values() for b in entries}
 
 
 # Global models: the creatures of the globally loaded zones, with the looks they have there
@@ -194,7 +200,7 @@ WHERE s.version = 0 AND s.zone IN ({', '.join(repr(z) for z in GLOBAL_ZONES)})
         n = clean_name(name)
         if n:
             g_names[int(race)][n] += 1
-    global_entries = [e for e in (pick(g_looks, g_names, r) for r in sorted(g_looks)) if e]
+    global_entries = [e for e in (pick(g_looks, g_names, r, BOSS_RACES) for r in sorted(g_looks)) if e]
 
 
 def lua_entry(e):
@@ -215,7 +221,8 @@ out = ['-- =====================================================================
        '']
 counts = {}
 for zone in ZONES:
-    entries = [e for e in (pick(looks[zone], names[zone], r) for r in sorted(looks[zone])) if e]
+    own_boss_races = {b['race'] for b in bosses[zone]} | CURATED_RACES
+    entries = [e for e in (pick(looks[zone], names[zone], r, own_boss_races) for r in sorted(looks[zone])) if e]
     counts[zone] = len(entries)
     out.append(f'M.zones["{zone}"] = {{')
     out += [f'    {lua_entry(e)},' for e in entries]

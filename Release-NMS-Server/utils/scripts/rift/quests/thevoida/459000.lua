@@ -150,7 +150,7 @@ function OpenRiftInstance(client, tier, npc)
 
     -- 2. Create the instance; it outlives the rift timer so players can walk out after a fail
     local duration = rift.TIME_LIMIT + rift.INSTANCE_GRACE
-    local instance_id = eq.create_instance(zone.short_name, rift.INSTANCE_VERSION, duration)
+    local instance_id = eq.create_instance(zone.short_name, zone.version or rift.INSTANCE_VERSION, duration)
     if instance_id <= 0 then
         client:Message(13, "The energies of the Fabric fail to stabilize the instance. Please try again.")
         return

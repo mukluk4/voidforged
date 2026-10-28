@@ -58,6 +58,8 @@ rift.REWARD = {
     SPEED_SECONDS = cfg.reward.speed_seconds,
     SPEED_BONUS   = cfg.reward.speed_bonus,
     PLATINUM_PER_TIER = cfg.reward.platinum_per_tier or 0,
+    FORTUNE_TRIBUTE_ID   = cfg.reward.fortune_tribute_id or 0,
+    FORTUNE_PCT_PER_TIER = cfg.reward.fortune_pct_per_tier or 0,
 }
 
 local PYLON_THRESHOLDS = cfg.pylon_at
@@ -335,9 +337,31 @@ function rift.reward_amount(tier, clear_time)
     return amount
 end
 
+-- Chronal Fortune's tribute tier if it's active for this player in this rift, else 0.
+-- Bucket: "<instance id>|<tribute id>:<tier>,..."
+local function fortune_tier(client)
+    local value = client:GetBucket("chronal_tributes") or ""
+    local instance, list = value:match("^(%d+)|(.*)$")
+    if tonumber(instance) ~= eq.get_zone_instance_id() then
+        return 0
+    end
+    for id, t in list:gmatch("(%d+):(%d+)") do
+        if tonumber(id) == rift.REWARD.FORTUNE_TRIBUTE_ID then
+            return tonumber(t)
+        end
+    end
+    return 0
+end
+
 function rift.grant_rewards(client, tier, clear_time)
     local r = rift.REWARD
     local amount = rift.reward_amount(tier, clear_time)
+    local fortune = fortune_tier(client) * r.FORTUNE_PCT_PER_TIER
+    if fortune > 0 then
+        local extra = math.floor(amount * fortune / 100)
+        amount = amount + extra
+        client:Message(15, string.format("Chronal Fortune adds %d%% (%d) to your shards.", fortune, extra))
+    end
     client:AddAlternateCurrencyValue(r.CURRENCY_ID, amount)
     client:Message(15, string.format("You receive %d %s. (Total: %d)",
         amount, r.CURRENCY_NAME, client:GetAlternateCurrencyValue(r.CURRENCY_ID)))

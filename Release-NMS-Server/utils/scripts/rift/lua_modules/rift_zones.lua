@@ -3,25 +3,37 @@
 -- Deploy to: lua_modules/rift_zones.lua
 -- Usage:     local RIFT_ZONE_POOL = require("rift_zones")
 --
--- x/y/z/h are the instance entry point (also the version-1 zone safe point). Every zone here
--- has a rift spawn set at instance version 1: one archetype at each normal spawn location,
--- the controller, and copies of the doors, zone points and ground spawns.
+-- x/y/z/h are the instance entry point and facing (also the zone safe point of the rift version). Every
+-- zone here has a rift spawn set at instance version 1 (or `version` where given): one archetype at
+-- each normal spawn location, the controller, and copies of the doors, zone points and ground spawns.
 -- ============================================================================
 
 return {
-    { zone_id = 200, short_name = "codecay",     name = "The Crypt of Decay",                  x = -170, y = -65, z = -93, h = 0 },
-    { zone_id = 89 , short_name = "sebilis",     name = "The Ruins of Sebilis",                x = 0, y = 250, z = 44, h = 0 },
-    { zone_id = 103, short_name = "chardok",     name = "Chardok",                             x = 859, y = 119, z = 106, h = 0 },
-    { zone_id = 36 , short_name = "befallen",    name = "Befallen",                            x = 35, y = -82, z = 3, h = 0 },
-    { zone_id = 102, short_name = "karnor",      name = "Karnor's Castle",                     x = 302, y = 18, z = 6, h = 0 },
+    { zone_id = 200, short_name = "codecay",     name = "The Crypt of Decay",                  x = -170, y = -65, z = -93, h = 128 },
+    { zone_id = 89 , short_name = "sebilis",     name = "The Ruins of Sebilis",                x = 0, y = 250, z = 44, h = 256 },
+    { zone_id = 103, short_name = "chardok",     name = "Chardok",                             x = 859, y = 119, z = 106, h = 384 },
+    { zone_id = 36 , short_name = "befallen",    name = "Befallen",                            x = 35, y = -82, z = 3, h = 384 },
+    { zone_id = 102, short_name = "karnor",      name = "Karnor's Castle",                     x = 302, y = 18, z = 6, h = 384 },
     { zone_id = 59 , short_name = "mistmoore",   name = "The Castle of Mistmoore",             x = 120, y = -330, z = -178, h = 0 },
     { zone_id = 72 , short_name = "fearplane",   name = "The Plane of Fear",                   x = 1282, y = -1139, z = 5, h = 0 },
-    { zone_id = 48 , short_name = "cazicthule",  name = "Accursed Temple of CazicThule",       x = -74, y = 71, z = 4, h = 0 },
-    { zone_id = 105, short_name = "charasis",    name = "The Howling Stones",                  x = 0, y = 0, z = 4, h = 0 },
-    { zone_id = 73 , short_name = "permafrost",  name = "The Permafrost Caverns",              x = 61, y = -121, z = 2, h = 0 },
-    { zone_id = 128, short_name = "sleeper",     name = "The Sleeper's Tomb",                  x = 1, y = -40, z = 3, h = 0 },
-    { zone_id = 112, short_name = "velketor",    name = "Velketor's Labyrinth",                x = -65, y = 581, z = -152, h = 0 },
-    { zone_id = 186, short_name = "hateplaneb",  name = "The Plane of Hate",                   x = -393, y = 656, z = 3, h = 0 },
+    { zone_id = 48 , short_name = "cazicthule",  name = "Accursed Temple of CazicThule",       x = -74, y = 71, z = 4, h = 128 },
+    { zone_id = 105, short_name = "charasis",    name = "The Howling Stones",                  x = 0, y = 0, z = 4, h = 128 },
+    { zone_id = 73 , short_name = "permafrost",  name = "The Permafrost Caverns",              x = 61, y = -121, z = 2, h = 256 },
+    { zone_id = 128, short_name = "sleeper",     name = "The Sleeper's Tomb",                  x = 1, y = -40, z = 3, h = 128 },
+    { zone_id = 186, short_name = "hateplaneb",  name = "The Plane of Hate",                   x = -393, y = 656, z = 3, h = 448, version = 2 },
     { zone_id = 179, short_name = "akheva",      name = "The Akheva Ruins",                    x = 60, y = -1395, z = 22, h = 0 },
-    { zone_id = 163, short_name = "griegsend",   name = "Grieg's End",                         x = 3461, y = -19, z = -5, h = 0 },
+    { zone_id = 163, short_name = "griegsend",   name = "Grieg's End",                         x = 3461, y = -19, z = -5, h = 256 },
+    { zone_id = 351, short_name = "dreadspire",  name = "Dreadspire Keep",                     x = 1358, y = -1030, z = -572, h = 336, version = 2 },
+    { zone_id = 31 , short_name = "soldunga",    name = "Solusek's Eye",                       x = -486, y = -476, z = 73, h = 384 },
+    { zone_id = 32 , short_name = "soldungb",    name = "Nagafen's Lair",                      x = -263, y = -424, z = -108, h = 128, version = 2 },
+    { zone_id = 113, short_name = "kael",        name = "Kael Drakkel",                        x = -633, y = -47, z = 128, h = 240 },
+    { zone_id = 453, short_name = "oldkaesoraa", name = "Kaesora Library",                     x = 34, y = -21, z = 3, h = 128 },
+    { zone_id = 317, short_name = "anguish",     name = "Anguish, the Fallen Palace",          x = -9, y = -2466, z = -79, h = 0 },
+    { zone_id = 402, short_name = "frostcrypt",  name = "Frostcrypt, Throne of the Shade King", x = 0, y = -40, z = 2, h = 0 },
+    { zone_id = 491, short_name = "convorteum",  name = "The Convorteum",                      x = 28, y = -24, z = -42, h = 0 },
+    { zone_id = 88 , short_name = "kaesora",     name = "Kaesora",                             x = 40, y = 370, z = 102, h = 256 },
+    { zone_id = 708, short_name = "somnium",     name = "Sanctum Somnium",                     x = -2, y = 195, z = 0, h = 256 },
+    { zone_id = 334, short_name = "riftseekers", name = "Riftseekers' Sanctum",                x = -1, y = 297, z = -208, h = 0 },
+    { zone_id = 760, short_name = "chapterhouse", name = "Chapterhouse of the Fallen",          x = 13, y = -13, z = 0, h = 128 },
+    { zone_id = 406, short_name = "ashengate",   name = "Ashengate, Reliquary of the Scale",   x = 0, y = -375, z = 8, h = 0 },
 }

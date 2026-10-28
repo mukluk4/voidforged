@@ -7,6 +7,7 @@ Snapshot of the Greater Rift content. The live copies run from the server's runt
 |---|---|
 | `quests/global/Rift_*.lua` | `quests/global/` |
 | `quests/thevoida/459000.lua` (Zebuxoruk: story, tier menu, re-enter, close) | `quests/thevoida/` |
+| `quests/thevoida/1200050.lua` (Chronal Artificer: points players to `#reforge`) | `quests/thevoida/` |
 | `lua_modules/*.lua` | `lua_modules/` (the server only searches this folder, **not** `quests/lua_modules`) |
 | `start_server.bat` | `Build/bin/Release/` (sets Perl 5.26 paths so plugins like `plugin::LoadMysql` work) |
 
@@ -45,3 +46,35 @@ their armor set bonuses.
 Class armor sets: `../dynamic_items/gen_class_sets.py` builds the per-class pieces, their dynamic_items
 rows, armor sets with bonuses and the token vendor list from `../dynamic_items/class_sets.json`
 (`export` writes that file from a live database; this server's is checked in).
+
+## Platinum and AA sinks
+
+`gen_sinks.py` writes `sql/2026_10_27_01_plat_aa_sinks.sql` and `client/dbstr_paragon.txt` (no arguments, no database access).
+Every number below is at the top of the script. The SQL deletes its own rows first, so it can be rerun.
+
+* **Chronal Tributes** (tributes 60-63, benefit items 980001-980035): Might, Arcana, Bulwark and Fortune, 5 tiers each.
+  - Tiers stack: the tier selected turns on its band and every band below it. Tier III works in rift tiers 1-300 and
+    gives the benefit of the rift's band (I's in a tier 50 rift, III's in a tier 250 rift).
+    Above its top band, and outside rifts, it does nothing and costs nothing.
+  - Cost: 100 favor x the rift tier, once per run, taken on entering the rift (or on turning the tribute on inside it).
+    That is 10% of the run's platinum per tribute. The cost the tribute window shows is the top of the band.
+  - Fortune adds 5% Chronal Shards per tier to the clear reward. It never adds platinum.
+  - Code: `zone/nms_chronal_tribute.cpp`; rules `Custom:ChronalTribute*`. Fortune's numbers are in `rift_config.lua` (`reward.fortune_*`).
+* **Paragon AAs** (abilities 17800-17811, ranks 19000-19559), General tab, level 51:
+  - 50 ranks of +25 HP, mana or endurance, +1 AC or +1 attack: 5 AA for rank 1, +1 per rank (1,475 AA each).
+  - 10 ranks of +1% melee damage: 25 AA, +10 per rank (700 AA).
+  - 50 ranks of +1 of each heroic stat: 15 AA, +3 per rank (4,425 AA each).
+  - Starting values are deliberately small; every number is at the top of `gen_sinks.py`.
+  - Heroic stats use server-only AA effects 9001-9006 (`zone/nms_paragon.cpp`), counted like item heroics. They aren't sent to the client.
+  - **Client file:** the names and descriptions are new `dbstr_us.txt` lines. Run
+    `python client/add_dbstr.py "<EverQuest>/Resources/dbstr_us.txt"` on each player's client; it keeps a `.bak`.
+* **Reforging** (`#reforge`, any player): pay platinum and Chronal Shards to replace one random line of a dynamic item.
+  - Each paid reforge offers two new lines; take one or keep the current one.
+  - The first line reforged is the only one on that item that can be reforged again.
+  - Cost: 25,000 platinum and 50 shards x (2 x item tier - 1), +25% per reforge of the same item, up to 5x.
+  - Paying and choosing need the Chronal Artificer (npc 1200050, The Void) targeted within 30 units; looking works anywhere.
+  - Stored on the item as `dyn_ench` (and `dyn_offer` while a choice is pending); the seed is unchanged.
+  - Rules `Custom:Reforge*`.
+
+Apply: back up, run the SQL with the server down, and clear The Void's `zone_state_spawns` rows (zone state saving would
+bring back the old spawns without the Artificer). Then run `shared_memory`, copy `1200050.lua` and the two `lua_modules` files, and add the client strings.

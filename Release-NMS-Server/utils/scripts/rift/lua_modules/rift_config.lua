@@ -38,6 +38,10 @@ return {
         speed_seconds = 600,
         speed_bonus   = 25,
         platinum_per_tier = 1000,  -- also paid on a clear: tier x this, to each player (no speed bonus)
+        -- Chronal Fortune tribute: +pct_per_tier% shards per tribute tier (never platinum). The zone writes
+        -- the character's active Chronal Tributes to the "chronal_tributes" bucket (zone/nms_chronal_tribute.cpp).
+        fortune_tribute_id = 63,
+        fortune_pct_per_tier = 5,
     },
 
     -- Rift NPC types (npc_types ids)
@@ -57,7 +61,7 @@ return {
     -- Spell penetration: every rift NPC's spells are this much harder to resist (NPC special ability 43,
     -- Casting Resist Difficulty). The resist roll is 0-200 against resist + modifiers, so without this,
     -- players past ~200 resist shrug off everything. -(base + per_tier * tier), never past max.
-    spell_penetration = { base = 200, per_tier = 2, max = 400 },
+    spell_penetration = { base = 400, per_tier = 2.8, max = 1200 },
 
     -- Melee penetration for every rift NPC, also from tier 1 (base + per_tier * tier, never past max):
     --   heroic_strikethrough: each point cancels 25 of the player's heroic DEX (riposte/parry/block) and
