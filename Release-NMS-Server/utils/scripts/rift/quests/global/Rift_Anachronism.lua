@@ -17,9 +17,15 @@ local affixes = require("champion_affixes")
 local APPEARANCES = require("rift_appearances")
 
 local function zone_pool()
+    local zone = eq.get_zone_short_name()
+    local skip = (APPEARANCES.zone_skip_races or {})[zone] or {}
     local pool = {}
-    for _, entry in ipairs(APPEARANCES.zones[eq.get_zone_short_name()] or {}) do table.insert(pool, entry) end
-    for _, entry in ipairs(APPEARANCES.global) do table.insert(pool, entry) end
+    for _, entry in ipairs(APPEARANCES.zones[zone] or {}) do
+        if not skip[entry.race] then table.insert(pool, entry) end
+    end
+    for _, entry in ipairs(APPEARANCES.global) do
+        if not skip[entry.race] then table.insert(pool, entry) end
+    end
 
     -- Tight (size-capped) zones also leave out models too tall at any size
     if APPEARANCES.size_cap[eq.get_zone_short_name()] then

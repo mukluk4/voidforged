@@ -67,6 +67,11 @@ SIZE_CAP = {
 }
 # Models that stand too tall for a capped zone at any size (Treant): left out of those zones' pools
 CAP_SKIP_RACES = [244]
+# Models left out of one zone's pool even though they fit (Treant looks wrong in the lava zones)
+ZONE_SKIP_RACES = {
+    'soldunga': [244],
+    'soldungb': [244],
+}
 
 PLAYER_RACES = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 128, 130, 330, 522}
 SKIP_RACES = {0, 127, 240}           # none / invisible man / untargetable
@@ -217,7 +222,7 @@ out = ['-- =====================================================================
        '-- global: models the client loads in every zone (from Resources/GlobalLoad.txt), used everywhere.',
        '-- ============================================================================',
        '',
-       'local M = { zones = {}, bosses = {}, global = {}, size_cap = {}, cap_skip_races = {} }',
+       'local M = { zones = {}, bosses = {}, global = {}, size_cap = {}, cap_skip_races = {}, zone_skip_races = {} }',
        '']
 counts = {}
 for zone in ZONES:
@@ -245,6 +250,9 @@ for zone, cap in SIZE_CAP.items():
 out.append('-- cap_skip_races[race]: never used in a capped zone (too tall at any size)')
 for race in CAP_SKIP_RACES:
     out.append(f'M.cap_skip_races[{race}] = true')
+out.append('-- zone_skip_races[short_name][race]: never used in that zone (see ZONE_SKIP_RACES in the generator)')
+for zone, races in ZONE_SKIP_RACES.items():
+    out.append(f'M.zone_skip_races["{zone}"] = {{ ' + ', '.join(f'[{r}] = true' for r in races) + ' }')
 out.append('')
 out.append('return M')
 open(out_path, 'w', newline='\n').write('\n'.join(out) + '\n')
