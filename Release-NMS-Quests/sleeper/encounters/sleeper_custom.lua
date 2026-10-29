@@ -7,6 +7,28 @@ local next_event_hp				= 90;
 local kerafrym_id       		= 128089;
 local warder_instance_status	= 0;
 
+-- Instance ids get reused, so the warder flag stores the instance's end time and only counts
+-- when it matches this instance. The open world (instance 0) keeps a plain "1".
+local function warder_flag_key()
+	return "Sleeper_Warder_Status-"..eq.get_zone_instance_id();
+end
+
+local function warder_flag_value()
+	local instance_id = eq.get_zone_instance_id();
+	if instance_id == 0 then
+		return 1;
+	end
+	return os.time() + eq.get_instance_timer_by_id(instance_id);
+end
+
+local function get_warder_status()
+	local stored = tonumber(eq.get_data(warder_flag_key())) or 0;
+	if stored == 0 then
+		return 0;
+	end
+	return math.abs(stored - warder_flag_value()) <= 60 and 1 or 0;
+end
+
 function evt_kera_spawn(e)
 	e.self:Shout("Insolent lesser races, in thanks for freeing me from centuries of slumber, I shall grant you a quick death!");
     eq.get_entity_list():FindDoor(46):SetLocation(500, 500, 500);
@@ -153,7 +175,7 @@ function reset_event(e)
 end
 
 function evt_add_spawn(e)
-	warder_instance_status	= tonumber(eq.get_data("Sleeper_Warder_Status-"..eq.get_zone_instance_id())) or 0;
+	warder_instance_status	= get_warder_status();
 
 	if warder_instance_status == 1 then -- Clear item list if mob was previously spawned and killed in this instance to prevent exploit farming.
 		e.self:ClearItemList();
@@ -187,7 +209,7 @@ function evt_add_timer(e)
 end
 
 function evt_warder_death(e)
-	eq.set_data("Sleeper_Warder_Status-"..eq.get_zone_instance_id(), "1","H6");
+	eq.set_data(warder_flag_key(), tostring(warder_flag_value()),"H6");
 end
 
 function event_encounter_load(e)
@@ -207,5 +229,5 @@ function event_encounter_load(e)
 		eq.register_npc_event("sleeper_custom",     Event.death_complete,	event_dragon_adds[i],	evt_warder_death);
 	end
 
-	warder_instance_status	= tonumber(eq.get_data("Sleeper_Warder_Status-"..eq.get_zone_instance_id())) or 0
+	warder_instance_status	= get_warder_status()
 end
