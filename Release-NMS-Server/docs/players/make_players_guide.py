@@ -1,6 +1,6 @@
 """Builds Voidforged_Players_Guide.pdf next to this script.
 
-Numbers come from the server's settings as of 2026-10-27 (rift_config.lua, gen_sinks.py, the
+Numbers come from the server's settings as of 2026-10-29 (rift_config.lua, gen_sinks.py, the
 dynamic_affix_pool table, docs/dynamic_items). Update them here when those change, then rerun:
     python make_players_guide.py
 """
@@ -256,11 +256,22 @@ story.append(table([
     ["Chronal Tributes", "Rift-only tributes that boost you inside Fractures and pay for themselves in shards."],
     ["Paragon", "Twelve deep AA lines for raw HP, mana, AC and heroic stats once you have the rest."],
     ["Reforging", "Swap one random line on a rolled piece for a better one."],
-    ["Quality of life", "The Nautilus Vault, personal loot offers (/nmsloot), melee while casting, gear sets, and more."],
+    ["Quality of life", "Buffs that don't wear off, no corpse runs, automatic combat abilities, the Nautilus Vault, personal loot offers (/nmsloot), gear sets, and more."],
 ], [1.35 * inch, CW - 1.35 * inch], bold_first_col=True))
 
 story.append(P("Quality of life", "h2"))
 story += bullets([
+    "<b>Buffs that hold.</b> Buffs you cast on yourself, and buffs from your group, stop counting down while "
+    "the caster is in your zone and still has the spell (memorized in their book, a clicky on their gear, or a "
+    "long-lasting AA). They stay on through death, and so does your summoned pet.",
+    "<b>Death is cheap.</b> Dying costs no experience and leaves no corpse: you keep your gear and respawn at "
+    "your bind point.",
+    "<b>#autoskill.</b> Set combat abilities such as Kick, Bash, Backstab, Frenzy, Taunt or the monk strikes to "
+    "fire on their own while you auto-attack. <b>#autoskill list</b> shows yours; "
+    "<b>#autoskill &lt;name&gt; on</b> or <b>off</b> sets one.",
+    "<b>Echo buffs.</b> During special events everyone gets the Echo buffs automatically: Echo of Experience "
+    "and Echo of Luck (more experience, and luckier loot), Echo of Selo (run speed) and Echo of Power (HP, "
+    "mana, AC, stats and haste).",
     "<b>Nautilus Vault.</b> Every character receives a Nautilus Vault on login. It gives you extra storage, lets "
     "you use clickies stored in it, and opens your bank and a merchant from anywhere.",
     "<b>Personal loot (/nmsloot).</b> When a mob dies, every group or raid member in the zone gets their own "
@@ -316,6 +327,8 @@ story += bullets([
     "Your group comes with you, but only members <b>standing in The Void</b> when the rift opens.",
     "The zone is picked at random from 27 dungeons. Rifts are free to open.",
     "One open rift per character. Say <b>re-enter</b> to go back to yours, or <b>close</b> to abandon it.",
+    "If the rift's zone crashes, your progress, pylons, Guardian and exit portal come back when it restarts: "
+    "re-enter and carry on. The clock keeps running.",
 ])
 story.append(P("Inside the rift", "h2"))
 story.append(table([
@@ -570,6 +583,7 @@ story.append(table([
     ["#dyninfo", "Compare all your rolled gear. Add a number, a slot, <b>compare a b</b> or <b>worn</b>."],
     ["#reforge", "List, price and reforge rolled gear (pay and choose with the Chronal Artificer targeted)."],
     ["#gear list / show &lt;n&gt; / load &lt;n&gt;", "Your saved gear sets; save them in the Bandolier window."],
+    ["#autoskill list / &lt;name&gt; on|off", "Combat abilities that fire on their own while you auto-attack."],
     ["/nmsloot", "Your personal loot offers: keep, sell or pass each one."],
 ], [1.9 * inch, CW - 1.9 * inch], bold_first_col=True))
 story.append(P("Command replies go to the Other chat window by default; scroll it if nothing seems to happen.",
