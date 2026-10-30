@@ -24,7 +24,6 @@ return {
     { zone_id = 179, short_name = "akheva",      name = "The Akheva Ruins",                    x = 60, y = -1395, z = 22, h = 0 },
     { zone_id = 163, short_name = "griegsend",   name = "Grieg's End",                         x = 3461, y = -19, z = -5, h = 256 },
     { zone_id = 351, short_name = "dreadspire",  name = "Dreadspire Keep",                     x = 1358, y = -1030, z = -572, h = 336, version = 2 },
-    { zone_id = 31 , short_name = "soldunga",    name = "Solusek's Eye",                       x = -486, y = -476, z = 73, h = 384 },
     { zone_id = 32 , short_name = "soldungb",    name = "Nagafen's Lair",                      x = -263, y = -424, z = -108, h = 128, version = 2 },
     { zone_id = 113, short_name = "kael",        name = "Kael Drakkel",                        x = -633, y = -47, z = 128, h = 240 },
     { zone_id = 453, short_name = "oldkaesoraa", name = "Kaesora Library",                     x = 34, y = -21, z = 3, h = 128 },

@@ -201,7 +201,7 @@ RIFT_ZONES = [
     "The Crypt of Decay", "The Ruins of Sebilis", "Chardok", "Befallen", "Karnor's Castle",
     "The Castle of Mistmoore", "The Plane of Fear", "Accursed Temple of Cazic-Thule", "The Howling Stones",
     "The Permafrost Caverns", "The Sleeper's Tomb", "The Plane of Hate",
-    "The Akheva Ruins", "Grieg's End", "Dreadspire Keep", "Solusek's Eye", "Nagafen's Lair", "Kael Drakkel",
+    "The Akheva Ruins", "Grieg's End", "Dreadspire Keep", "Nagafen's Lair", "Kael Drakkel",
     "Kaesora Library", "Anguish, the Fallen Palace", "Frostcrypt", "The Convorteum", "Kaesora",
     "Sanctum Somnium", "Riftseekers' Sanctum", "Chapterhouse of the Fallen", "Ashengate",
 ]
@@ -249,7 +249,7 @@ story.append(table([
     ["Feature", "What it means for you"],
     ["Three classes", "Every character combines three classes. Gear, spells and set bonuses for any of them count."],
     ["Level 65", "The level cap is 65. Alternate Advancement opens at level 51."],
-    ["Greater Rifts", "Timed, randomized dungeons in 27 zones with tiers from 1 to 500. Opened by Zebuxoruk in The Void."],
+    ["Greater Rifts", f"Timed, randomized dungeons in {len(RIFT_ZONES)} zones with tiers from 1 to 500. Opened by Zebuxoruk in The Void."],
     ["Rolled gear", "Rift armor and jewelry roll their own stats when you buy them, weighted for your class. No two pieces are alike."],
     ["Class sets", "Armor sets give bonuses at 2, 4 and 8 pieces; jewelry sets at 3, 6 and 9."],
     ["Glamours", "Change how your armor and weapons look without losing stats."],
@@ -310,7 +310,7 @@ story.append(P("When you hail Zebuxoruk:", "h3"))
 story.append(P("\u201cAh, another mind drawn to the edge of everything. I am Zebuxoruk, and the Chronal Fabric "
                "is unraveling because of me.\u201d", "quote"))
 
-story.append(P("The 27 rift zones", "h2"))
+story.append(P(f"The {len(RIFT_ZONES)} rift zones", "h2"))
 story.append(P(", ".join(RIFT_ZONES) + "."))
 
 # --- Greater Rifts ---------------------------------------------------------------------------
@@ -325,7 +325,7 @@ story += bullets([
     "You can open any tier up to <b>one above your deepest clear</b>, to a maximum of 500. Progress is per "
     "character: grouping with someone deeper doesn't unlock tiers for you.",
     "Your group comes with you, but only members <b>standing in The Void</b> when the rift opens.",
-    "The zone is picked at random from 27 dungeons. Rifts are free to open.",
+    f"The zone is picked at random from {len(RIFT_ZONES)} dungeons. Rifts are free to open.",
     "One open rift per character. Say <b>re-enter</b> to go back to yours, or <b>close</b> to abandon it.",
     "If the rift's zone crashes, your progress, pylons, Guardian and exit portal come back when it restarts: "
     "re-enter and carry on. The clock keeps running.",

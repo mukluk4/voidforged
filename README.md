@@ -15,7 +15,7 @@ The player-facing introduction is the **Player's Guide**:
 
 | System | What it is | Where |
 | --- | --- | --- |
-| Greater Rifts | Timed, randomized instances in 27 classic dungeons, tiers 1 to 500, opened by Zebuxoruk in The Void | `utils/scripts/rift/` |
+| Greater Rifts | Timed, randomized instances in 26 classic dungeons, tiers 1 to 500, opened by Zebuxoruk in The Void | `utils/scripts/rift/` |
 | Dynamic items | Gear that rolls class-weighted stats once, on purchase, stored as a seed | `zone/dynamic_items.*`, `docs/dynamic_items/` |
 | Tiered rift gear | Five tiers of class armor, jewelry and augments, unlocked by deepest rift clear | `utils/scripts/dynamic_items/`, `docs/dynamic_items/TIERED_GEAR.md` |
 | Set bonuses | Armor sets at 2/4/8 pieces, jewelry sets at 3/6/9 (worn effects, procs, pet focus) | `zone/client.cpp` (`CheckArmorSetBonuses`), `armor_set_bonuses` table |

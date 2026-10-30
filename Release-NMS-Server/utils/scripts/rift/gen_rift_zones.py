@@ -30,8 +30,9 @@ ENTRY_CLEAR_BY_ZONE = {'sleeper': 150, 'dreadspire': 100, 'soldunga': 80, 'soldu
 DEFAULT_ZONES = ['codecay', 'sebilis', 'chardok',
                  'befallen', 'karnor', 'mistmoore', 'fearplane', 'cazicthule', 'charasis', 'permafrost',
                  'sleeper', 'hateplaneb', 'akheva', 'griegsend',
-                 'dreadspire', 'soldunga', 'soldungb', 'kael', 'oldkaesoraa', 'anguish', 'frostcrypt',
+                 'dreadspire', 'soldungb', 'kael', 'oldkaesoraa', 'anguish', 'frostcrypt',
                  'convorteum', 'kaesora', 'somnium', 'riftseekers', 'chapterhouse', 'ashengate']
+# Left out of the pool: soldunga (Solusek's Eye has too many doors between its rooms for a timed run)
 # Chapterhouse's safe point is a cramped corner; the arrival point from Shard's Landing opens into the zone
 DEFAULT_ENTRY = {'sleeper': (1, -40, 3), 'chapterhouse': (13, -13, 0)}
 # Heading on arrival (0 north, 128 east, 256 south, 384 west), facing into the zone and away from the zone
