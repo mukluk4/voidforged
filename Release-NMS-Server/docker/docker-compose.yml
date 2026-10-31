@@ -1,0 +1,46 @@
+# Voidforged in Docker: the game server plus its database. See README.md in this folder.
+services:
+  db:
+    image: mariadb:11.8
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?set it in .env}
+      MARIADB_DATABASE: ${DB_NAME:-peq}
+    command: ["--innodb-buffer-pool-size=${DB_BUFFER_POOL:-512M}", "--max-allowed-packet=256M"]
+    volumes:
+      - db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      retries: 30
+    # No published ports: the database is only reachable from the server container.
+
+  server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        BUILD_JOBS: ${BUILD_JOBS:-1}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_NAME: ${DB_NAME:-peq}
+      DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?set it in .env}
+      SERVER_SHORTNAME: ${SERVER_SHORTNAME:-Voidforged}
+      SERVER_LONGNAME: ${SERVER_LONGNAME:-Voidforged}
+      PUBLIC_ADDRESS: ${PUBLIC_ADDRESS:?set it in .env}
+      WORLD_KEY: ${WORLD_KEY:?set it in .env}
+      LOGIN_HOST: ${LOGIN_HOST:?set it in .env}
+      LOGIN_PORT: ${LOGIN_PORT:-5998}
+    ports:
+      - "9000:9000/udp"
+      - "7001-7030:7001-7030/udp"
+    volumes:
+      - ${RUNTIME_DIR:?set it in .env}:/runtime:ro
+      - data:/data
+
+volumes:
+  db:
+  data:

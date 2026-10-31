@@ -1,0 +1,7 @@
+Build
+build
+vcpkg
+.git
+database/voidforged-content.zip
+docs/players
+docker/.env
