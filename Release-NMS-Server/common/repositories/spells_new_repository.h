@@ -44,15 +44,21 @@ public:
      */
 
 	// Custom extended repository methods here
+	// Spells at or above this stay server-only. IDs in the 50000s in the client's spells_us.txt stop spell
+	// animations from playing (43108 is known fine; the exact client limit is unknown).
+	static constexpr int CLIENT_SPELL_ID_LIMIT = 45000;
+
 	static std::vector<std::string> GetSpellFileLines(Database& db)
 	{
 		std::vector<std::string> lines;
 
 		auto results = db.QueryDatabase(
 			fmt::format(
-				"SELECT CONCAT_WS('^', {}) FROM {} ORDER BY {} ASC",
+				"SELECT CONCAT_WS('^', {}) FROM {} WHERE {} < {} ORDER BY {} ASC",
 				ColumnsRaw(),
 				TableName(),
+				PrimaryKey(),
+				CLIENT_SPELL_ID_LIMIT,
 				PrimaryKey()
 			)
 		);
@@ -96,9 +102,11 @@ public:
 
 		auto results = db.QueryDatabase(
 			fmt::format(
-				"SELECT CONCAT_WS('^', {}) FROM {} ORDER BY {} ASC",
+				"SELECT CONCAT_WS('^', {}) FROM {} WHERE {} < {} ORDER BY {} ASC",
 				ColumnsRaw(),
 				TableName(),
+				PrimaryKey(),
+				CLIENT_SPELL_ID_LIMIT,
 				PrimaryKey()
 			)
 		);

@@ -27,6 +27,8 @@ CUSTOM_CONTENT = [
     'rank_ability_mapping',
 ]
 
+CLIENT_SPELL_ID_LIMIT = 45000
+
 
 def schema_tables(func):
     src = open(os.path.join(ROOT, 'common', 'database_schema.h'), encoding='utf-8', errors='ignore').read()
@@ -69,7 +71,11 @@ def main():
 
         with zipfile.ZipFile(args.out, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as z:
             z.write(sql, 'voidforged-content.sql')
-            z.write(os.path.join(bin_dir, 'export', 'spells_us.txt'), 'spells_us.txt')
+            # IDs in the 50000s stop spell animations on the client (common/repositories/spells_new_repository.h);
+            # filtered here too so an exporter built before that limit can't put them in the snapshot
+            with open(os.path.join(bin_dir, 'export', 'spells_us.txt'), 'rb') as f:
+                z.writestr('spells_us.txt', b''.join(line for line in f
+                                                     if int(line.split(b'^', 1)[0]) < CLIENT_SPELL_ID_LIMIT))
         print(f'{len(tables)} tables, {os.path.getsize(sql) / 1e6:.1f} MB SQL -> {args.out} '
               f'({os.path.getsize(args.out) / 1e6:.1f} MB)')
 
