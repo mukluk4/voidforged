@@ -21,7 +21,8 @@
 #ifndef EQEMU_EQEMU_LOGSYS_LOG_ALIASES_H
 #define EQEMU_EQEMU_LOGSYS_LOG_ALIASES_H
 
-inline auto logsys = EQEmuLogSys::Instance();
+// Looked up on each use: a global pointer can still be null when a static initializer logs (crashed zone on Linux)
+#define logsys (EQEmuLogSys::Instance())
 
 #define LogAA(message, ...) do {\
     if (logsys->IsLogEnabled(Logs::General, Logs::AA))\

@@ -1,7 +1,7 @@
 #include "nms_paragon.h"
 
-#include "aa_ability.h"
 #include "client.h"
+#include "aa_ability.h"
 #include "zone.h"
 
 extern Zone *zone;
