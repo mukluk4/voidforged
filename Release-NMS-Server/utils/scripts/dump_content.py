@@ -5,6 +5,7 @@
 Tables: EQEmu's content and server tables (common/database_schema.h) plus the custom content tables
 below. Player, login, state, query-server and *_backup_* tables are never included. The database
 password is read from eqemu_config.json and handed to mysqldump in a temporary options file.
+The zip also holds spells_us.txt, written by export_client_files from the folder holding the config.
 Needs mysqldump (MariaDB's bin folder) on PATH.
 """
 import argparse
@@ -61,8 +62,14 @@ def main():
                            stdout=f, check=True)
 
         os.makedirs(os.path.dirname(args.out), exist_ok=True)
+        # The client spell file, from the server's own exporter (it rewrites rows; a raw spells_new dump won't match)
+        bin_dir = os.path.dirname(os.path.abspath(args.config))
+        subprocess.run([os.path.join(bin_dir, 'export_client_files'), 'spells'], cwd=bin_dir, check=True,
+                       stdout=subprocess.DEVNULL)
+
         with zipfile.ZipFile(args.out, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as z:
             z.write(sql, 'voidforged-content.sql')
+            z.write(os.path.join(bin_dir, 'export', 'spells_us.txt'), 'spells_us.txt')
         print(f'{len(tables)} tables, {os.path.getsize(sql) / 1e6:.1f} MB SQL -> {args.out} '
               f'({os.path.getsize(args.out) / 1e6:.1f} MB)')
 
