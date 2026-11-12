@@ -41,6 +41,9 @@ services:
       args:
         BUILD_JOBS: ${BUILD_JOBS:-1}
     restart: unless-stopped
+    # The crash handler attaches gdb to the crashing zone, which needs ptrace
+    cap_add:
+      - SYS_PTRACE
     depends_on:
       db:
         condition: service_healthy
