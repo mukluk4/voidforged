@@ -409,6 +409,7 @@ set(gm_command_sources
     gm_commands/myskills.cpp
     gm_commands/mysql.cpp
     gm_commands/mystats.cpp
+    gm_commands/nimbustest.cpp
     gm_commands/npccast.cpp
     gm_commands/npcedit.cpp
     gm_commands/npceditmass.cpp

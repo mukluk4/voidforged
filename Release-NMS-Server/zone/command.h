@@ -134,6 +134,7 @@ void command_movement(Client *c, const Seperator *sep);
 void command_myskills(Client *c, const Seperator *sep);
 void command_mysql(Client *c, const Seperator *sep);
 void command_mystats(Client *c, const Seperator *sep);
+void command_nimbustest(Client *c, const Seperator *sep);
 void command_npccast(Client *c, const Seperator *sep);
 void command_npcedit(Client *c, const Seperator *sep);
 void command_npceditmass(Client *c, const Seperator *sep);
