@@ -93,6 +93,7 @@ extern volatile bool RunLoops;
 #include "client.h"
 #include "dynamic_items.h"
 #include "nms_vault.h"
+#include "nms_weapon_procs.h"
 
 
 extern QueryServ* QServ;
@@ -15315,6 +15316,8 @@ void LoadArmorSetBonuses() {
 	}
 
 	LogInfo("Loaded {} armor set items and {} armor set bonus configurations.", g_armor_set_item_map.size(), g_armor_set_bonuses_map.size());
+
+	NmsLoadItemSympathetics();
 }
 
 std::unordered_map<uint32, uint32> Client::CountEquippedArmorSetPieces() {
@@ -15381,6 +15384,9 @@ void Client::CheckArmorSetBonuses(StatBonuses* itembonuses) {
 	std::set<uint16> wanted_procs;
 	m_set_bonus_sympathetic.clear();
 	m_set_bonus_focus.clear();
+
+	// Tier shields and range items carry a sympathetic of their own, checked the same way
+	NmsAddItemSympathetics(this, m_set_bonus_sympathetic);
 
 	// Process stats and state transitions for each active set
 	for (const auto& [set_id, piece_count] : equipped_set_counts) {

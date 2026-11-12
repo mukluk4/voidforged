@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "bot.h"
 #include "nms_vault.h"
 #include "nms_loot_offers.h"
+#include "nms_weapon_procs.h"
 
 extern QueryServ* QServ;
 extern WorldServer worldserver;
@@ -2616,6 +2617,9 @@ bool NPC::Death(Mob* killer_mob, int64 damage, uint16 spell, EQ::skills::SkillTy
 	// and dropped any NoDrop item entirely (nothing NoDrop can go on a corpse), destroying it.
 	// Returning them directly fixes both: one copy, to its actual owner, NoDrop included.
 	ReturnMultiQuestItemsOnDeath();
+
+	// Dream of the Void jumps to the nearest enemy while the buffs are still on the corpse-to-be
+	NmsWeaponProcNpcDied(this);
 
 	if (killer_mob && killer_mob->IsOfClientBot() && IsValidSpell(spell) && damage > 0) {
 		char val1[20] = { 0 };

@@ -102,6 +102,7 @@ SET(zone_sources
     titles.cpp
     nms_waypoints.cpp
     nms_vault.cpp
+    nms_weapon_procs.cpp
     nms_loot_offers.cpp
     gear_sets.cpp
     nms_chronal_tribute.cpp
@@ -153,6 +154,8 @@ SET(zone_headers
     dialogue_window.h
     dynamic_items.h
     nms_vault.h
+    nms_weapon_procs.h
+    nms_weapon_procs_ids.h
     nms_loot_offers.h
     gear_sets.h
     nms_chronal_tribute.h

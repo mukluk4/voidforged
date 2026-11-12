@@ -106,6 +106,7 @@ Copyright (C) 2001-2002 EQEMu Development Team (http://eqemu.org)
 #include "client.h"
 #include "mob.h"
 #include "water_map.h"
+#include "nms_weapon_procs.h"
 
 extern Zone         *zone;
 extern volatile bool is_zone_loaded;
@@ -4297,6 +4298,7 @@ bool Mob::SpellOnTarget(
 	bool disable_buff_overwrite
 ) {
 	auto spellOwner = GetOwnerOrSelf();
+	const float nms_hp_before = spelltar ? spelltar->GetHPRatio() : 100.0f; // for the Unmaking execute
 
 	if (spellOwner->IsClient() || (spellOwner->IsPet() && spellOwner->GetOwner() && spellOwner->GetOwner()->IsClient())) {
 		if (spelltar->IsClient() || (spelltar->IsPet() && spelltar->GetOwner() && spelltar->GetOwner()->IsClient())) {
@@ -5162,6 +5164,8 @@ bool Mob::SpellOnTarget(
 	if (spelltar->IsClient()) {
 		spelltar->CastToClient()->SendBulkStatsUpdate();
 	}
+
+	NmsWeaponProcLanded(this, spelltar, spell_id, nms_hp_before);
 
 	return true;
 }
