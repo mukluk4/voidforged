@@ -6795,6 +6795,19 @@ void Mob::DoKnockback(Mob *caster, uint32 push_back, uint32 push_up)
 
 void Mob::TrySpellOnKill(uint8 level, uint16 spell_id, Corpse* corpse)
 {
+	// Fire an on-kill spell. A self buff that a stronger buff would block is skipped instead of cast:
+	// casting a blocked self buff from inside NPC::Death crashed the zone (Unmaking Hunger -> Unmaking
+	// Frenzy blocked by Blade of Truth, 2026-11-12).
+	auto fire = [&](uint16 kill_spell) {
+		Mob *target = IsDetrimentalSpell(kill_spell) && corpse ? corpse : this;
+		if (target == this && IsBuffSpell(kill_spell) && IsBeneficialSpell(kill_spell) &&
+			CanBuffStack(kill_spell, static_cast<uint8>(GetCasterLevel(kill_spell))) < 0) {
+			LogSpells("[TrySpellOnKill] Skipping [{}]: a stronger buff blocks it", kill_spell);
+			return;
+		}
+		SpellFinished(kill_spell, target, EQ::spells::CastingSlot::Item, 0, -1, spells[kill_spell].resist_difficulty);
+	};
+
 	if (IsValidSpell(spell_id))
 	{
 		if(IsEffectInSpell(spell_id, SE_ProcOnSpellKillShot)) {
@@ -6804,7 +6817,7 @@ void Mob::TrySpellOnKill(uint8 level, uint16 spell_id, Corpse* corpse)
 					if (IsValidSpell(spells[spell_id].limit_value[i]) && spells[spell_id].max_value[i] <= level)
 					{
 						if(zone->random.Roll(spells[spell_id].base_value[i]))
-							SpellFinished(spells[spell_id].limit_value[i], IsDetrimentalSpell(spells[spell_id].limit_value[i]) && corpse ? corpse : this, EQ::spells::CastingSlot::Item, 0, -1, spells[spells[spell_id].limit_value[i]].resist_difficulty);
+							fire(spells[spell_id].limit_value[i]);
 					}
 				}
 			}
@@ -6825,17 +6838,17 @@ void Mob::TrySpellOnKill(uint8 level, uint16 spell_id, Corpse* corpse)
 	for(int i = 0; i < MAX_SPELL_TRIGGER*3; i+=3) {
 		if(aabonuses.SpellOnKill[i] && IsValidSpell(aabonuses.SpellOnKill[i]) && (level >= aabonuses.SpellOnKill[i + 2])) {
 			if(zone->random.Roll(static_cast<int>(aabonuses.SpellOnKill[i + 1])))
-				SpellFinished(aabonuses.SpellOnKill[i], IsDetrimentalSpell(aabonuses.SpellOnKill[i]) && corpse ? corpse : this, EQ::spells::CastingSlot::Item, 0, -1, spells[aabonuses.SpellOnKill[i]].resist_difficulty);
+				fire(aabonuses.SpellOnKill[i]);
 		}
 
 		if(itembonuses.SpellOnKill[i] && IsValidSpell(itembonuses.SpellOnKill[i]) && (level >= itembonuses.SpellOnKill[i + 2])){
 			if(zone->random.Roll(static_cast<int>(itembonuses.SpellOnKill[i + 1])))
-				SpellFinished(itembonuses.SpellOnKill[i], IsDetrimentalSpell(itembonuses.SpellOnKill[i]) && corpse ? corpse : this, EQ::spells::CastingSlot::Item, 0, -1, spells[aabonuses.SpellOnKill[i]].resist_difficulty);
+				fire(itembonuses.SpellOnKill[i]);
 		}
 
 		if(spellbonuses.SpellOnKill[i] && IsValidSpell(spellbonuses.SpellOnKill[i]) && (level >= spellbonuses.SpellOnKill[i + 2])) {
 			if(zone->random.Roll(static_cast<int>(spellbonuses.SpellOnKill[i + 1])))
-				SpellFinished(spellbonuses.SpellOnKill[i], IsDetrimentalSpell(spellbonuses.SpellOnKill[i]) && corpse ? corpse : this, EQ::spells::CastingSlot::Item, 0, -1, spells[aabonuses.SpellOnKill[i]].resist_difficulty);
+				fire(spellbonuses.SpellOnKill[i]);
 		}
 
 	}
