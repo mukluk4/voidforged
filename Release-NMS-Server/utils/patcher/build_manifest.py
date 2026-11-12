@@ -6,6 +6,9 @@
 Writes <out>/manifest.txt and <out>/objects/<md5[:2]>/<md5>. Objects already in <out> are kept, so
 re-running after a client change only adds the new files. Upload objects/ first and manifest.txt last,
 so players never see a manifest that names files the host does not have yet.
+
+LEGO brick models never ship (user rule, 2026-11-12). The brick install keeps each file it replaced as
+brick_orig/<path>.orig; when that folder exists, the original is shipped in place of the brick file.
 """
 import argparse
 import fnmatch
@@ -86,6 +89,17 @@ def main():
     rules = load_rules(args.rules)
     os.makedirs(out, exist_ok=True)
 
+    # Brick files installed in the reference client: path -> the original it replaced
+    originals = {}
+    brick_dir = os.path.join(client, 'brick_orig')
+    if os.path.isdir(brick_dir):
+        for root, _, files in os.walk(brick_dir):
+            for name in files:
+                if name.lower().endswith('.orig'):
+                    full = os.path.join(root, name)
+                    rel = os.path.relpath(full, brick_dir).replace(os.sep, '/')[:-len('.orig')]
+                    originals[rel.lower()] = (rel, full)
+
     # Hashes are cached by size and write time so a rebuild only reads what changed
     cache_path = os.path.join(out, 'build_cache.json')
     try:
@@ -95,6 +109,23 @@ def main():
 
     entries, skipped = [], {'exclude': 0}
     new_objects = new_bytes = 0
+    swapped = set()
+
+    def add(rel, full, kind):
+        nonlocal new_objects, new_bytes
+        key = rel + ('|orig' if rel.lower() in originals else '')
+        st = os.stat(full)
+        c = cache.get(key)
+        if c and c[0] == st.st_size and c[1] == st.st_mtime_ns:
+            md5 = c[2]
+        else:
+            md5 = md5_file(full)
+            cache[key] = [st.st_size, st.st_mtime_ns, md5]
+        if store(out, md5, src=full):
+            new_objects += 1
+            new_bytes += st.st_size
+        entries.append(('I' if kind == 'ifmissing' else 'F', md5, st.st_size, rel))
+
     for root, dirs, files in os.walk(client):
         dirs.sort()
         for name in sorted(files):
@@ -102,23 +133,26 @@ def main():
             rel = os.path.relpath(full, client).replace(os.sep, '/')
             if '\t' in rel or '\n' in rel:
                 sys.exit(f'unsupported character in file name: {rel!r}')
+            if rel.lower().startswith('brick_orig/'):
+                skipped['exclude'] += 1
+                continue
             kind = match(rules, rel)
             if kind == 'exclude':
                 skipped['exclude'] += 1
                 continue
             if args.eqhost and rel.lower() == 'eqhost.txt':
                 continue
-            st = os.stat(full)
-            c = cache.get(rel)
-            if c and c[0] == st.st_size and c[1] == st.st_mtime_ns:
-                md5 = c[2]
-            else:
-                md5 = md5_file(full)
-                cache[rel] = [st.st_size, st.st_mtime_ns, md5]
-            if store(out, md5, src=full):
-                new_objects += 1
-                new_bytes += st.st_size
-            entries.append(('I' if kind == 'ifmissing' else 'F', md5, st.st_size, rel))
+            if rel.lower() in originals:
+                swapped.add(rel.lower())
+                full = originals[rel.lower()][1]
+            add(rel, full, kind)
+
+    # An original whose brick replacement isn't in the client any more still ships
+    for low, (rel, full) in sorted(originals.items()):
+        kind = match(rules, rel)
+        if low not in swapped and kind != 'exclude':
+            swapped.add(low)
+            add(rel, full, kind)
 
     if args.eqhost:
         data = f'[LoginServer]\r\nHost={args.eqhost}\r\n'.encode('ascii')
@@ -146,6 +180,8 @@ def main():
     total = sum(e[2] for e in entries)
     print(f'files {len(entries)} ({total / (1 << 30):.2f} GB), install-if-missing {sum(e[0] == "I" for e in entries)}, '
           f'excluded {skipped["exclude"]}, new objects {new_objects} ({new_bytes / (1 << 20):.1f} MB)')
+    if swapped:
+        print(f'brick files left out: shipped the {len(swapped)} originals from brick_orig/ instead')
 
 
 if __name__ == '__main__':

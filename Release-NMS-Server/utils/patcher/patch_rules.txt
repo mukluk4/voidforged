@@ -82,3 +82,11 @@ exclude folder.jpg
 # The patcher's own files; the patcher exe is shipped separately for self-update
 exclude voidpatcher.*
 exclude voidpatcher_backup/**
+
+# LEGO brick models never ship (2026-11-12). build_manifest.py also swaps any brick file in the
+# client for its brick_orig/ original.
+exclude brick_orig/**
+
+# Client logs and local shortcuts
+exclude texture.txt
+exclude *.lnk
