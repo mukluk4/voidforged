@@ -10,7 +10,7 @@ namespace VoidPatcher
 {
 	static class Program
 	{
-		public const string Version = "1.1.0";
+		public const string Version = "1.2.0";
 
 		// Where manifest.txt and objects/ live: patch_url.txt, built into the exe. VoidPatcher.ini next to
 		// the exe can override it (url=...)

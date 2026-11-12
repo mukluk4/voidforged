@@ -14,7 +14,14 @@ using System.Threading.Tasks;
 
 namespace VoidPatcher
 {
-	enum PatchResult { UpToDate, Patched, Restarting }
+	// FilesInUse: patched, except files a running EverQuest has open; the next run finishes them
+	enum PatchResult { UpToDate, Patched, FilesInUse, Restarting }
+
+	// A running EverQuest holds this file open, so it can't be replaced yet
+	class FileInUseException : IOException
+	{
+		public FileInUseException(string path) : base(path + " is in use") { }
+	}
 
 	class Patcher
 	{
@@ -32,6 +39,12 @@ namespace VoidPatcher
 		public event Action<long, long> Progress;
 
 		public Manifest Manifest { get; private set; }
+
+		// Files left for the next run because EverQuest has them open
+		public List<string> InUse { get; } = new List<string>();
+
+		// Set when EverQuest was running as the patch started: only then is a locked file left for later
+		bool gameRunning;
 
 		public Patcher(string gameDir, string baseUrl)
 		{
@@ -56,12 +69,22 @@ namespace VoidPatcher
 				return PatchResult.Restarting;
 			}
 
+			gameRunning = Process.GetProcessesByName("eqgame").Length > 0;
+			if (gameRunning) {
+				Log?.Invoke("EverQuest is running. Files it has open will be left for the next patch.");
+			}
+
 			foreach (var rel in Manifest.Deletes) {
 				var full = FullPath(rel);
 				if (File.Exists(full)) {
-					File.SetAttributes(full, FileAttributes.Normal);
-					File.Delete(full);
-					Log?.Invoke("Removed " + rel);
+					try {
+						File.SetAttributes(full, FileAttributes.Normal);
+						File.Delete(full);
+						Log?.Invoke("Removed " + rel);
+					} catch (Exception ex) when (gameRunning && IsInUse(ex)) {
+						InUse.Add(rel);
+						Log?.Invoke($"In use, will remove next time: {rel}");
+					}
 				}
 			}
 
@@ -76,6 +99,11 @@ namespace VoidPatcher
 			if (needed.Count == 0) {
 				cache.Save();
 				Progress?.Invoke(1, 1);
+				if (InUse.Count > 0) {
+					Status?.Invoke("Close EverQuest and press Patch to finish.");
+					return PatchResult.FilesInUse;
+				}
+
 				Status?.Invoke("Up to date.");
 				return PatchResult.UpToDate;
 			}
@@ -87,6 +115,11 @@ namespace VoidPatcher
 			} finally {
 				// Keep what finished so a cancelled or failed run picks up where it stopped
 				cache.Save();
+			}
+
+			if (InUse.Count > 0) {
+				Status?.Invoke($"{InUse.Count} file(s) are in use by EverQuest. Close it and press Patch to finish.");
+				return PatchResult.FilesInUse;
 			}
 
 			Status?.Invoke("Patching complete.");
@@ -118,9 +151,14 @@ namespace VoidPatcher
 					Directory.CreateDirectory(backup);
 				}
 
-				File.SetAttributes(full, FileAttributes.Normal);
-				File.Move(full, Path.Combine(backup, name));
-				Log?.Invoke($"Moved {name} to {backup.Substring(gameDir.Length + 1)} (not part of the Voidforged client)");
+				try {
+					File.SetAttributes(full, FileAttributes.Normal);
+					File.Move(full, Path.Combine(backup, name));
+					Log?.Invoke($"Moved {name} to {backup.Substring(gameDir.Length + 1)} (not part of the Voidforged client)");
+				} catch (Exception ex) when (gameRunning && IsInUse(ex)) {
+					InUse.Add(name);
+					Log?.Invoke($"In use, will move aside next time: {name}");
+				}
 			}
 		}
 
@@ -136,6 +174,9 @@ namespace VoidPatcher
 				}
 
 				var full = FullPath(e.Path);
+				// An old copy moved aside while EverQuest had it loaded
+				TryDelete(full + ".voidold");
+
 				var info = new FileInfo(full);
 				if (!info.Exists) {
 					needed.Add(e);
@@ -153,7 +194,15 @@ namespace VoidPatcher
 
 				var md5 = cache.Get(e.Path, info);
 				if (md5 == null) {
-					md5 = await Task.Run(() => HashFile(full), ct);
+					try {
+						md5 = await Task.Run(() => HashFile(full), ct);
+					} catch (Exception ex) when (gameRunning && IsInUse(ex)) {
+						// EverQuest has it open without letting others read it; check it next time
+						InUse.Add(e.Path);
+						Log?.Invoke($"In use by EverQuest, will check next time: {e.Path}");
+						continue;
+					}
+
 					cache.Set(e.Path, info, md5);
 				}
 
@@ -211,6 +260,14 @@ namespace VoidPatcher
 						Report(false);
 					} catch (OperationCanceledException) when (ct.IsCancellationRequested) {
 						throw;
+					} catch (FileInUseException) {
+						// Downloaded and checked; the verified copy waits beside the file for the next run
+						lock (InUse) {
+							InUse.Add(e.Path);
+						}
+
+						Interlocked.Increment(ref filesDone);
+						Log?.Invoke($"In use by EverQuest, will update next time: {e.Path}");
 					} catch (Exception ex) {
 						lock (failures) {
 							failures.Add(e.Path);
@@ -300,13 +357,13 @@ namespace VoidPatcher
 						throw new InvalidDataException("the download was damaged in transit");
 					}
 
-					if (File.Exists(full)) {
-						File.SetAttributes(full, FileAttributes.Normal);
-						File.Delete(full);
+					if (!Install(tmp, full)) {
+						throw new FileInUseException(e.Path);
 					}
 
-					File.Move(tmp, full);
 					return;
+				} catch (FileInUseException) {
+					throw;
 				} catch (Exception) when (!ct.IsCancellationRequested && attempt < Retries) {
 					await Task.Delay(TimeSpan.FromSeconds(Math.Min(30, 3 * attempt)), ct);
 				} catch (Exception) {
@@ -315,6 +372,55 @@ namespace VoidPatcher
 					throw;
 				}
 			}
+		}
+
+		// Put a verified download in place. False when a running EverQuest has the file open: the download
+		// stays as the .voidtmp, which the next run installs without fetching it again.
+		bool Install(string tmp, string full)
+		{
+			var old = full + ".voidold";
+			TryDelete(old);
+
+			try {
+				if (File.Exists(full)) {
+					File.SetAttributes(full, FileAttributes.Normal);
+					File.Delete(full);
+				}
+
+				File.Move(tmp, full);
+				return true;
+			} catch (Exception ex) when (gameRunning && IsInUse(ex)) {
+				// Loaded exes and DLLs can't be deleted but can be renamed, so move the old one aside
+			}
+
+			try {
+				File.Move(full, old);
+			} catch (Exception ex) when (IsInUse(ex)) {
+				return false;
+			}
+
+			try {
+				File.Move(tmp, full);
+			} catch {
+				// Never leave the file missing
+				File.Move(old, full);
+				throw;
+			}
+
+			// The game still has it loaded; removed on a later run
+			TryDelete(old);
+			return true;
+		}
+
+		static bool IsInUse(Exception ex)
+		{
+			if (ex is UnauthorizedAccessException) {
+				return true;
+			}
+
+			// ERROR_SHARING_VIOLATION, ERROR_LOCK_VIOLATION
+			var code = ex.HResult & 0xFFFF;
+			return ex is IOException && (code == 32 || code == 33);
 		}
 
 		// Swap in a newer patcher: Windows lets a running exe be renamed but not overwritten

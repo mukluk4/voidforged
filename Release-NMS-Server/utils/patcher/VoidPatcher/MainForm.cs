@@ -92,13 +92,7 @@ namespace VoidPatcher
 				}
 			}
 
-			if (Process.GetProcessesByName("eqgame").Length > 0) {
-				MessageBox.Show(this, "EverQuest is running. Close it, then press Patch.", "Voidforged Patcher",
-					MessageBoxButtons.OK, MessageBoxIcon.Warning);
-				status.Text = "Close EverQuest, then press Patch.";
-				return;
-			}
-
+			// A running EverQuest no longer stops the patch: files it has open are left for the next run
 			_ = RunPatch();
 		}
 
@@ -125,7 +119,16 @@ namespace VoidPatcher
 				}
 
 				ok = true;
-				AppendLog(result == PatchResult.UpToDate ? "Everything is up to date." : "Patching complete.");
+				if (result == PatchResult.FilesInUse) {
+					AppendLog($"Patched, except {p.InUse.Count} file(s) EverQuest has open:");
+					foreach (var f in p.InUse) {
+						AppendLog("  " + f);
+					}
+
+					AppendLog("Close every EverQuest window and press Patch to finish them.");
+				} else {
+					AppendLog(result == PatchResult.UpToDate ? "Everything is up to date." : "Patching complete.");
+				}
 			} catch (OperationCanceledException) {
 				status.Text = "Cancelled. Press Patch to continue where you left off.";
 				AppendLog("Cancelled.");

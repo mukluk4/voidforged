@@ -9,7 +9,7 @@
     <Nullable>disable</Nullable>
     <AssemblyName>VoidPatcher</AssemblyName>
     <RootNamespace>VoidPatcher</RootNamespace>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>

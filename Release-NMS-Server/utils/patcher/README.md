@@ -10,6 +10,9 @@ for a fresh install, and run it. It downloads whatever differs from the Voidforg
 - Zone and model files from other clients that ours doesn't have (`stray` rules, such as a newer
   `nektulos.eqg`, which the game loads instead of our `nektulos.s3d`) are moved to `VoidPatcher_backup/`.
   Only the top folder is checked.
+- It patches while EverQuest is running. A running `eqgame.exe` or DLL is renamed aside and replaced; a file
+  the game holds open is downloaded and checked but left as `<file>.<md5>.voidtmp`, and the next patch with
+  EverQuest closed puts it in place without downloading it again.
 - The patcher updates itself first when a newer one is published.
 - It runs on .NET Framework 4.8, which ships with Windows 10 and 11, so there is nothing else to install.
 - Everything it does is written to `VoidPatcher.log` next to the exe. Ask players for that file when
