@@ -62,6 +62,21 @@ services:
       - ${RUNTIME_DIR:?set it in .env}:/runtime:ro
       - data:/data
 
+  # OOC <-> Discord bridge (discord-bridge/bridge.py). It logs into world's console on TCP 9001, which is only
+  # reachable inside this compose network. Idles until DISCORD_TOKEN and DISCORD_CHANNEL_ID are set.
+  discord:
+    build: ./discord-bridge
+    restart: unless-stopped
+    depends_on:
+      - server
+    environment:
+      DISCORD_TOKEN: ${DISCORD_TOKEN:-}
+      DISCORD_CHANNEL_ID: ${DISCORD_CHANNEL_ID:-}
+      CONSOLE_HOST: server
+      CONSOLE_PORT: "9001"
+      CONSOLE_USER: ${CONSOLE_USER:-discordbridge}
+      CONSOLE_PASSWORD: ${CONSOLE_PASSWORD:-}
+
   # VoidPatcher's files (manifest.txt and objects/), uploaded by utils/patcher/publish_box.sh. Plain static files:
   # nginx handles the Range requests the patcher resumes downloads with.
   patch:

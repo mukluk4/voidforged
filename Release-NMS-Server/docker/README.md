@@ -31,3 +31,23 @@ Open UDP 5998, 5999, 9000 and 7001-7030 to players, and TCP `PATCH_PORT` (8088) 
   players in it.
 - **Backups:** `backup.sh` dumps both databases to `~/voidforged/backups` and keeps 14 days (`BACKUP_DIR` and `KEEP_DAYS`
   change that). Run it from cron and copy the dumps to another machine; they hold player data and password hashes.
+
+## Discord bridge
+
+The `discord` service mirrors server-wide OOC to one Discord channel and back. Discord messages show in game as
+`*discordbridge says out of character, 'Name: text'`.
+
+1. In the Discord developer portal, create an application, add a bot, turn on **Message Content Intent**, and invite
+   it to your server with View Channel, Send Messages and Read Message History on the OOC channel.
+2. Put the bot token and the channel's ID (Developer Mode, right-click the channel, Copy Channel ID) in `.env` as
+   `DISCORD_TOKEN` and `DISCORD_CHANNEL_ID`, and set a random `CONSOLE_PASSWORD`.
+3. Create the console account in peq (status 50 is the console minimum; the account can't log into the game):
+   ```
+   docker compose exec -T db sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" "$MARIADB_DATABASE"' <<SQL
+   INSERT INTO account (name, ls_id, password, status) VALUES ('discordbridge', 'eqemu', MD5('<CONSOLE_PASSWORD>'), 50);
+   SQL
+   ```
+4. `docker compose up -d --build discord`, then `docker compose logs discord` should show both logins.
+
+World's console (TCP 9001) is enabled by `start.sh` but not published. Set `CONSOLE_ENABLED=false` on the server
+service to turn it off.

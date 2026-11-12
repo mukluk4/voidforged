@@ -20,6 +20,7 @@ cat > eqemu_config.json <<EOF
     "address":"${PUBLIC_ADDRESS}","localaddress":"${PUBLIC_ADDRESS}",
     "key":"${WORLD_KEY}",
     "tcp":{"ip":"0.0.0.0","port":"9005"},"http":{"enabled":"false"},
+    "telnet":{"enabled":"${CONSOLE_ENABLED:-true}","ip":"0.0.0.0","port":"9001"},
     "loginserver":{"host":"${LOGIN_HOST}","port":"${LOGIN_PORT}","legacy":"0","account":"","password":""}
   },
   "chatserver":{"host":"${PUBLIC_ADDRESS}","port":"7778"},

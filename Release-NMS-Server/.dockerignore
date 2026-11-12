@@ -5,3 +5,5 @@ vcpkg
 database/voidforged-content.zip
 docs/players
 docker/.env
+# Not part of the server image; keeps bot edits from forcing a full recompile
+docker/discord-bridge
