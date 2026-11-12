@@ -17,9 +17,9 @@ All rift settings (hub location, time limit, tier cap, rewards and currency, rif
 Guardian spells and timers) live in `lua_modules/rift_config.lua`; `rift_core.lua`,
 `champion_affixes.lua` and `Rift_Guardian.lua` read it. The Void gate's settings (zone, access bucket,
 where unflagged players are sent) are named at the top of `quests/global/global_player.pl`; set
-`$VOID_ACCESS_BUCKET = ''` for no gate. Server rules: `Custom:KillFactionHits`,
-`Custom:ArmorSetTierVisuals`, `Custom:BlockGlamourResale`, `Custom:DynamicItemDisplayIds`,
-`Merchant:DynamicItemSellRefundPct`.
+`$VOID_ACCESS_BUCKET = ''` for no gate. Server rules: `Custom:KillFactionHits`, `Custom:BlockGlamourResale`,
+`Custom:DynamicItemDisplayIds`, `Merchant:DynamicItemSellRefundPct`. `Custom:ArmorSetTierVisuals` is no longer read
+(the tier change burst was removed 2026-11-12).
 
 ## Generators
 

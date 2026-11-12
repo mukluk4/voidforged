@@ -177,6 +177,7 @@ void command_sendzonespawns(Client *c, const Seperator *sep);
 void command_sensetrap(Client *c, const Seperator *sep);
 void command_serverrules(Client *c, const Seperator *sep);
 void command_set(Client *c, const Seperator *sep);
+void command_setnimbus(Client *c, const Seperator *sep);
 void command_show(Client *c, const Seperator *sep);
 void command_shutdown(Client *c, const Seperator *sep);
 void command_spawn(Client *c, const Seperator *sep);

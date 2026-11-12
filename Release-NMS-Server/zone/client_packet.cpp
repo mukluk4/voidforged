@@ -793,6 +793,9 @@ void Client::CompleteConnect()
 		ReapplyBuff(j1);
 	}
 
+	// Full armor set nimbus, held back until now so the zone sees it
+	RefreshSetNimbus(true);
+
 	/* Sends appearances for all mobs not doing Animation::Standing aka sitting, looting, playing dead */
 	entity_list.SendZoneAppearance(this);
 	/* Sends the Nimbus particle effects (up to 3) for any mob using them */
@@ -17166,7 +17169,14 @@ void Client::Handle_OP_GuildTributeDonateItem(const EQApplicationPacket *app)
 
 	auto in = (GuildTributeDonateItemRequest_Struct *) app->pBuffer;
 
+	// Voidforged: guild tribute is platinum only too (2026-11-12); the item is left where it is
+	Message(Chat::Red, "Guild tribute takes platinum only. Items cannot be tributed.");
+	return;
+
 	const auto *inst = GetInv().GetItem(in->slot);
+	if (!inst) {
+		return;
+	}
 	auto favor = inst->GetItemGuildFavor() * in->quantity;
 
 	auto guild = guild_mgr.GetGuildByGuildID(guild_id);

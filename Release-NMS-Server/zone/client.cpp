@@ -15269,10 +15269,16 @@ bool Client::UncompleteTask(int task_id)
 // Define Global Maps
 std::unordered_map<uint32, ArmorSetItemDef> g_armor_set_item_map;
 std::unordered_map<uint32, std::vector<ArmorSetBonusDef>> g_armor_set_bonuses_map;
+std::unordered_map<uint32, uint32> g_armor_set_gear_tier;
+std::unordered_map<uint32, uint32> g_armor_set_class;
+std::map<std::pair<uint32, uint32>, uint32> g_armor_set_nimbus; // (class, gear tier) -> nimbus effect
 
 void LoadArmorSetBonuses() {
 	g_armor_set_item_map.clear();
 	g_armor_set_bonuses_map.clear();
+	g_armor_set_gear_tier.clear();
+	g_armor_set_class.clear();
+	g_armor_set_nimbus.clear();
 
 	auto results_items = database.QueryDatabase("SELECT item_id, set_id, class_mask FROM armor_set_items");
 	if (results_items.Success()) {
@@ -15282,6 +15288,14 @@ void LoadArmorSetBonuses() {
 			item_def.set_id = atoi(row[1]);
 			item_def.class_mask = atoi(row[2]);
 			g_armor_set_item_map[item_def.item_id] = item_def;
+
+			// Armor sets that show a nimbus (jewelry sets don't): tier 1 is the Chronal Quartermaster's class armor
+			// (900201-900916), tiers 2-5 its copies at 940000 + (gear tier - 1) * 5000 + 0-999
+			if (item_def.item_id >= 900200 && item_def.item_id < 901000) {
+				g_armor_set_gear_tier[item_def.set_id] = 1;
+			} else if (item_def.item_id >= 940000 && item_def.item_id < 965000 && (item_def.item_id - 940000) % 5000 < 1000) {
+				g_armor_set_gear_tier[item_def.set_id] = (item_def.item_id - 940000) / 5000 + 1;
+			}
 		}
 	}
 
@@ -15316,6 +15330,32 @@ void LoadArmorSetBonuses() {
 	}
 
 	LogInfo("Loaded {} armor set items and {} armor set bonus configurations.", g_armor_set_item_map.size(), g_armor_set_bonuses_map.size());
+
+	// Each tier armor set is made for one class: its items carry that single class bit
+	auto results_class = database.QueryDatabase(
+		"SELECT s.set_id, BIT_OR(i.classes) FROM armor_set_items s JOIN items i ON i.id = s.item_id "
+		"WHERE s.item_id BETWEEN 900200 AND 900999 OR (s.item_id BETWEEN 940000 AND 964999 AND (s.item_id - 940000) % 5000 < 1000) "
+		"GROUP BY s.set_id"
+	);
+	if (results_class.Success()) {
+		for (auto row = results_class.begin(); row != results_class.end(); ++row) {
+			const uint32 mask = Strings::ToUnsignedInt(row[1]);
+			if (mask && (mask & (mask - 1)) == 0) {
+				uint32 class_id = 1;
+				while (!(mask & (1u << (class_id - 1)))) {
+					++class_id;
+				}
+				g_armor_set_class[Strings::ToUnsignedInt(row[0])] = class_id;
+			}
+		}
+	}
+
+	auto results_nimbus = database.QueryDatabase("SELECT class_id, gear_tier, nimbus_effect FROM armor_set_nimbus");
+	if (results_nimbus.Success()) {
+		for (auto row = results_nimbus.begin(); row != results_nimbus.end(); ++row) {
+			g_armor_set_nimbus[{Strings::ToUnsignedInt(row[0]), Strings::ToUnsignedInt(row[1])}] = Strings::ToUnsignedInt(row[2]);
+		}
+	}
 
 	NmsLoadItemSympathetics();
 }
@@ -15382,6 +15422,8 @@ void Client::CheckArmorSetBonuses(StatBonuses* itembonuses) {
 
 	// Spell bonuses are rebuilt on every recalculation; weapon procs are synced after the loop
 	std::set<uint16> wanted_procs;
+	uint32 nimbus_gear_tier = 0; // highest gear tier among the tier sets at their full bonus
+	uint32 nimbus_class     = 0; // and the class that set is made for
 	m_set_bonus_sympathetic.clear();
 	m_set_bonus_focus.clear();
 
@@ -15406,31 +15448,14 @@ void Client::CheckArmorSetBonuses(StatBonuses* itembonuses) {
 		uint32 current_tier = m_active_armor_set_tiers[set_id];
 
 		
-		// Trigger visuals and chat messages ONLY when transitioning between tiers
+		// Chat messages ONLY when transitioning between tiers (the one-shot particle burst was removed 2026-11-12;
+		// set tiers will show as a lasting nimbus instead)
 		if (new_tier != current_tier) {
-			uint32 visual_spell_id = 0;
-
-			// Custom:ArmorSetTierVisuals = "tier 1,tier 2,tier 3,tier lost" spell effect ids (0 = none)
-			const auto visuals = Strings::Split(RuleS(Custom, ArmorSetTierVisuals), ',');
-			auto visual = [&](size_t i) -> uint32 {
-				if (i >= visuals.size()) {
-					return 0;
-				}
-				std::string id = visuals[i];
-				return Strings::ToUnsignedInt(Strings::Trim(id));
-			};
-
 			if (new_tier > current_tier) {
-				// Gaining a tier
-				visual_spell_id = visual(new_tier - 1);
-
 				// Send upgrade message in chat (Yellow text = CC_Yellow / 15)
 				this->Message(15, "You have unlocked Armor Set Tier %d!", new_tier);
 			}
 			else if (new_tier < current_tier) {
-				// Losing a tier
-				visual_spell_id = visual(3);
-
 				if (new_tier > 0) {
 					this->Message(15, "Your Armor Set has dropped to Tier %d.", new_tier);
 				}
@@ -15438,21 +15463,18 @@ void Client::CheckArmorSetBonuses(StatBonuses* itembonuses) {
 					this->Message(13, "You no longer meet the requirements for any Armor Set bonuses.");
 				}
 			}
-
-			// Send visual particle effect to zone
-			if (visual_spell_id > 0) {
-				this->SendSpellEffect(
-					this->GetID(),
-					this->GetID(),
-					visual_spell_id,
-					0,
-					1000,
-					true
-				);
-			}
 		}
 		// Update the stored tier state for this set ID
 		m_active_armor_set_tiers[set_id] = new_tier;
+
+		if (new_tier >= 3) {
+			const auto gt = g_armor_set_gear_tier.find(set_id);
+			const auto cl = g_armor_set_class.find(set_id);
+			if (gt != g_armor_set_gear_tier.end() && cl != g_armor_set_class.end() && gt->second > nimbus_gear_tier) {
+				nimbus_gear_tier = gt->second;
+				nimbus_class     = cl->second;
+			}
+		}
 
 		// Apply Stat Bonuses
 		for (const auto& bonus : bonus_it->second) {
@@ -15554,4 +15576,59 @@ void Client::CheckArmorSetBonuses(StatBonuses* itembonuses) {
 		}
 		m_set_bonus_procs.insert(proc);
 	}
+
+	// Full set bonus nimbus, by the set's class and gear tier (armor_set_nimbus)
+	m_set_nimbus_wanted = 0;
+	if (nimbus_gear_tier) {
+		const auto it = g_armor_set_nimbus.find({nimbus_class, nimbus_gear_tier});
+		if (it != g_armor_set_nimbus.end()) {
+			m_set_nimbus_wanted = it->second;
+		}
+	}
+	RefreshSetNimbus();
+}
+
+bool Client::IsSetNimbusHidden()
+{
+	if (m_set_nimbus_hidden < 0) {
+		m_set_nimbus_hidden = GetBucket("setnimbus_off").empty() ? 0 : 1;
+	}
+
+	return m_set_nimbus_hidden == 1;
+}
+
+void Client::SetSetNimbusHidden(bool hidden)
+{
+	if (hidden) {
+		SetBucket("setnimbus_off", "1");
+	} else {
+		DeleteBucket("setnimbus_off");
+	}
+
+	m_set_nimbus_hidden = hidden ? 1 : 0;
+	RefreshSetNimbus();
+}
+
+// Shows or removes the set nimbus so the zone matches m_set_nimbus_wanted. Before the client has finished zoning in
+// nothing is sent; CompleteConnect calls this with zoning_in once the zone can see the player.
+void Client::RefreshSetNimbus(bool zoning_in)
+{
+	if (!zoning_in && !ClientFinishedLoading()) {
+		return;
+	}
+
+	const uint32 wanted = IsSetNimbusHidden() ? 0 : m_set_nimbus_wanted;
+	if (wanted == m_set_nimbus_shown) {
+		return;
+	}
+
+	if (m_set_nimbus_shown) {
+		RemoveNimbusEffect(m_set_nimbus_shown);
+	}
+
+	if (wanted) {
+		SendSpellEffect(wanted, 500, 0, 1, 3000, true);
+	}
+
+	m_set_nimbus_shown = wanted;
 }

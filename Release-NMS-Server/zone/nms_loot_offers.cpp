@@ -1104,19 +1104,9 @@ bool NmsLootOfferApply(Client *c, const NmsLootOffer &offer, NmsLootAction actio
 		return true;
 	}
 	case NmsLootAction::Tribute: {
-		if (!item || item->Favor == 0 || item->NoDrop == 0 || OfferHasAugments(offer)) {
-			c->Message(Chat::White, "[NMS Tribute] %s has no tribute value - please pick another option.", item_name.c_str());
-			return false;
-		}
-		const int64 favor64 = static_cast<int64>(item->Favor) * static_cast<int64>(qty);
-		if (favor64 <= 0 || favor64 > INT32_MAX) {
-			c->Message(Chat::White, "[NMS Tribute] %s has no tribute value - please pick another option.", item_name.c_str());
-			return false;
-		}
-		const int32 favor = static_cast<int32>(favor64);
-		c->AddTributePoints(favor);
-		c->Message(Chat::White, "[NMS] %s tributed for %d favor points.", item_name.c_str(), favor);
-		return true;
+		// Tribute is platinum only on Voidforged (2026-11-12): no loot offer gives favor
+		c->Message(Chat::White, "[NMS Tribute] Tribute takes platinum only now - please pick another option.");
+		return false;
 	}
 	case NmsLootAction::Bank: {
 		if (!NmsVaultEnabled() || !NmsVaultTablesReady()) {

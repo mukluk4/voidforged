@@ -456,6 +456,7 @@ set(gm_command_sources
     gm_commands/sensetrap.cpp
     gm_commands/serverrules.cpp
     gm_commands/set.cpp
+    gm_commands/setnimbus.cpp
     gm_commands/show.cpp
     gm_commands/shutdown.cpp
     gm_commands/spawn.cpp

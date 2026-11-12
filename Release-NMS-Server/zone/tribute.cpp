@@ -250,6 +250,11 @@ int32 Client::TributeItem(uint32 slot, uint32 quantity) {
 	if(inst == nullptr)
 		return(0);
 
+	// Voidforged: tribute is platinum only (user decision 2026-11-12). Items never give favor, whatever their
+	// favor value; the item stays in the inventory, as on the "worthless" path below.
+	Message(Chat::Red, "Tribute takes platinum only. Items cannot be tributed.");
+	return(0);
+
 	// An augmented item cannot be tributed - refuse rather than silently destroy the augments.
 	//
 	// Tribute consumes the item outright (DeleteItemInInventory below) and pays out on the BASE item's

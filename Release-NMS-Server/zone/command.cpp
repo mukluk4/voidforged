@@ -225,6 +225,7 @@ int command_init(void)
 		command_add("sensetrap", "Analog for ldon sense trap for the newer clients since we still don't have it working.", AccountStatus::Player, command_sensetrap) ||
 		command_add("serverrules", "Show server rules", AccountStatus::Player, command_serverrules) ||
 		command_add("set", "Set command used to set various things", AccountStatus::Guide, command_set) ||
+		command_add("setnimbus", "[on|off] - Show or hide your own full armor set nimbus", AccountStatus::Player, command_setnimbus) ||
 		command_add("show", "Show command used to show various things", AccountStatus::Guide, command_show) ||
 		command_add("shutdown", "Shut this zone process down", AccountStatus::GMLeadAdmin, command_shutdown) ||
 		command_add("spawn", "[name] [race] [level] [material] [hp] [gender] [class] [priweapon] [secweapon] [merchantid] - Spawn an NPC", AccountStatus::Steward, command_spawn) ||

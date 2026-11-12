@@ -2,11 +2,11 @@
   "_doc": "Tiered rift gear (docs/dynamic_items/TIERED_GEAR.md). Read by gen_tier_gear.py together with class_sets.json (tier 1 armor themes, pieces and bonuses).",
 
   "tiers": [
-    {"tier": 1, "prefix": "",         "mult": 1.0, "unlock": 0},
-    {"tier": 2, "prefix": "Tempered", "mult": 1.5, "unlock": 100},
-    {"tier": 3, "prefix": "Exalted",  "mult": 2.0, "unlock": 200},
-    {"tier": 4, "prefix": "Eternal",  "mult": 2.5, "unlock": 300},
-    {"tier": 5, "prefix": "Timeless", "mult": 3.0, "unlock": 400}
+    {"tier": 1, "prefix": "",         "mult": 1.0, "weapon_mult": 1.5, "unlock": 0},
+    {"tier": 2, "prefix": "Tempered", "mult": 1.5, "weapon_mult": 2.0, "unlock": 100},
+    {"tier": 3, "prefix": "Exalted",  "mult": 2.0, "weapon_mult": 2.5, "unlock": 200},
+    {"tier": 4, "prefix": "Eternal",  "mult": 2.5, "weapon_mult": 3.0, "unlock": 300},
+    {"tier": 5, "prefix": "Timeless", "mult": 3.0, "weapon_mult": 3.5, "unlock": 400}
   ],
   "nonvis_unlock_offset": 25,
   "augment_unlock_offset": 50,
@@ -204,7 +204,7 @@
       "armor":    {"name": "Armorer",   "title": "Armor",    "race": 248, "size": 6, "cost": [25, 50, 100, 200, 400]},
       "nonvis":   {"name": "Jeweler",   "title": "Jewelry",  "race": 248, "size": 6, "cost": [15, 30, 60, 120, 240]},
       "augments": {"name": "Augmenter", "title": "Augments", "race": 273, "size": 6, "cost": [40, 80, 160, 320, 640]},
-      "weapons":  {"name": "Weaponsmith", "title": "Weapons", "race": 248, "size": 6, "cost": [30, 60, 120, 240, 480],
+      "weapons":  {"name": "Weaponsmith", "title": "Weapons", "race": 248, "size": 6, "cost": [100, 200, 400, 800, 1600],
                    "npc_id_base": 1200044}
     },
     "tier1_prefix": "Chronal"

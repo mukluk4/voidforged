@@ -283,6 +283,13 @@ public:
 	std::set<uint16>    m_set_bonus_procs;       // weapon procs added by set bonuses, so they can be removed
 	const std::vector<uint16> &GetSetBonusSympatheticSpells() const { return m_set_bonus_sympathetic; }
 	const std::vector<uint16> &GetSetBonusFocusSpells() const { return m_set_bonus_focus; }
+	// Full set bonus nimbus (armor_set_nimbus table): wanted is set by CheckArmorSetBonuses, shown is what the zone sees
+	uint32 m_set_nimbus_wanted = 0;
+	uint32 m_set_nimbus_shown  = 0;
+	int8   m_set_nimbus_hidden = -1; // -1 = not read from the setnimbus_off bucket yet
+	void RefreshSetNimbus(bool zoning_in = false);
+	void SetSetNimbusHidden(bool hidden);
+	bool IsSetNimbusHidden();
 	EQ::DynamicItemBonuses dynamic_item_bonuses;
 	void ReconnectUCS();
 	void RecordStats();
@@ -2713,6 +2720,8 @@ enum ArmorSetSpellType : uint8 {
 
 // --- Global Map Declarations ---
 extern std::unordered_map<uint32, ArmorSetItemDef> g_armor_set_item_map;
+extern std::unordered_map<uint32, uint32> g_armor_set_gear_tier; // tier armor set id -> gear tier 1-5 (no jewelry sets)
+extern std::unordered_map<uint32, uint32> g_armor_set_class;     // tier gear set id -> the class it is made for
 extern std::unordered_map<uint32, std::vector<ArmorSetBonusDef>> g_armor_set_bonuses_map;
 
 // --- Global Loader Declaration ---

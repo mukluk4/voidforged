@@ -245,12 +245,14 @@ for t in tiers:
     for n, src in enumerate(tg['weapons']):
         src_classes, itemtype, slots = weapon_src[src]
         kind = 'two_hand' if itemtype in TWO_HAND_TYPES else 'range' if slots == 2048 else 'other'
-        roll = round(tg['weapon_roll_multiplier'][kind] * t['mult'], 4)
+        # Weapons scale a step ahead of armor (2026-11-12): tier 1 is 1.5x the Legendary, not a plain copy of it
+        wmult = t.get('weapon_mult', t['mult'])
+        roll = round(tg['weapon_roll_multiplier'][kind] * wmult, 4)
         for cid, _ in classes:
             if not src_classes & (1 << (cid - 1)):
                 continue
             iid = tier_item_id(t['tier'], tg['weapon_block'] + n * 20, cid)
-            sql.append(scaled_copy(src, iid, t['prefix'] or v['tier1_prefix'], t['mult'], {'classes': str(1 << (cid - 1))}))
+            sql.append(scaled_copy(src, iid, t['prefix'] or v['tier1_prefix'], wmult, {'classes': str(1 << (cid - 1))}))
             dynamic_rows.append((iid, cid, t['tier'], roll, 'Tier weapon'))
             vendor_items[('weapons', t['tier'])].append((iid, 1 << (cid - 1)))
 sql.append('')

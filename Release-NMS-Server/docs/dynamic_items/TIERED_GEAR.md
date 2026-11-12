@@ -89,9 +89,11 @@ augments per tier; nobody owned the old ones).
 ## Weapons (added 2026-11-03)
 
 The 30 Legendary Plane of Time weapons and shields (Darkblade of the Warlord, Greatstaff of Power, Bow of the
-Tempest, Shield of Strife and the rest), copied per tier: tier 1 has the Legendary stats, and each tier multiplies
-damage and every stat by the tier multiplier (Darkblade: 76 damage and 450 HP at tier 1, 228 and 1,350 at tier 5).
-Delay, procs, focus and click effects and aug slots stay as the source. Names: tier prefix + source name
+Tempest, Shield of Strife and the rest), copied per tier. Damage and every stat are the Legendary's times the
+weapon multiplier, 1.5 / 2.0 / 2.5 / 3.0 / 3.5, half a step ahead of armor and jewelry (Darkblade: 114 damage and 675
+HP at tier 1, 266 and 1,575 at tier 5, against the Legendary's 76 and 450). Until 2026-11-12 weapons used the gear
+multiplier, so tier 1 had the Legendary's own stats. The random-roll strength moved by the same ratio. Delay, focus
+and click effects and aug slots stay as the source; procs are the new ones in WEAPON_PROCS.md. Names: tier prefix + source name
 (Chronal Darkblade of the Warlord ... Timeless Darkblade of the Warlord). No Trade. A tier's weapons unlock 75 past
 its armor, the slot that was left open for a new vendor type. Two stats-only range items come with them: Stone of
 Flowing Time (melee) and Spool of Woven Time (casters).
@@ -121,7 +123,10 @@ tier's Augmenter, a guessed spot to move in game.
 | Armor | 25 | 50 | 100 | 200 | 400 |
 | Non-visible | 15 | 30 | 60 | 120 | 240 |
 | Augments | 40 | 80 | 160 | 320 | 640 |
-| Weapons | 30 | 60 | 120 | 240 | 480 |
+| Weapons | 100 | 200 | 400 | 800 | 1600 |
+
+Weapons (shields and range items too) went from 30 / 60 / 120 / 240 / 480 to these on 2026-11-12, once they carried
+the new procs and sympathetics (WEAPON_PROCS.md). The tier arrows at the Weaponsmiths keep 15 / 30 / 60 / 120 / 240.
 
 ## Build
 
