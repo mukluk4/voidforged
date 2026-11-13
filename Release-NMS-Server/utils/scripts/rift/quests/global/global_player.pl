@@ -194,6 +194,7 @@ sub EVENT_TASK_COMPLETE {
 
 sub EVENT_LEVEL_UP {
     plugin::CommonCharacterUpdate($client);
+    plugin::GuildInfamyMaxLevel($client);
 
     if ($client->GetGM()) {
         return;

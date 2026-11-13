@@ -2,7 +2,25 @@
 
 Guilds earn Infamy from guild achievements, fill a treasury with platinum, and spend it on a private hall that grows
 with the guild: a better zone each tier, amenities, decorations, and boss trophies that upgrade as the guild keeps
-killing. Voidforged only. Nothing here is built yet. Every number marked *draft* is a placeholder to tune.
+killing. Voidforged only. Every number marked *draft* is a placeholder to tune.
+
+## Build phases (decided 2026-11-13)
+
+| Phase | Contents | Server rebuild |
+|---|---|---|
+| 1. Foundation (built 2026-11-13) | Infamy, the treasury, buying the T1 hall, the Steward and porter in the Bazaar | No |
+| 2. Hall features | Waypoints map entry, guild bank outside the guild hall zone, halls that don't expire, amenities | Yes |
+| 3. The rest | T2+ zones, decoration placement, trophies, rank-gated perks and guild tributes | Yes |
+
+Phase 1 decisions (2026-11-13):
+
+- Players donate and check totals at an NPC only: the Guild Steward in the Bazaar. The Guild Hall Porter stands
+  next to it.
+- The draft numbers below are used as they are.
+- A guild's members can't reach the guild hall until the guild buys T1. New characters still land in their own
+  shared copy.
+- Everything is behind an on/off switch, off until the owner turns it on. While off only GMs are served or earn
+  Infamy. Scripts, SQL and the switch: `utils/scripts/guild_halls/README.md`.
 
 ## Currencies
 
@@ -43,13 +61,30 @@ Infamy goes to the guild the character is in at the time of the kill or level.
 
 | Tier | Infamy *(draft)* | Platinum *(draft)* | Zones |
 |---|---:|---:|---|
-| T1 | 1,000 | 250,000 | The existing guild hall |
+| T1 | 1,000 | 250,000 | Highkeep (decided 2026-11-13) |
 | T2 | 5,000 | 1,000,000 | Open: city zones |
 | T3 | 15,000 | 3,000,000 | Open: for example temples |
 | T4 | 40,000 | 8,000,000 | Open: for example raid zones |
 | T5 | 100,000 | 20,000,000 | Open |
 
 Which zones go in which tier is still to be discussed.
+
+Decided 2026-11-13 (owner's notes), all five tiers "for now". Where a row names two sections, the choice is made at
+the in-game walk-through. Each hall is one section of the zone, sized for about a dozen
+NPCs, a guild banker, a tribute master and a full set of tradeskill stations:
+
+| Tier | Zone | Hall section | Amenities |
+|---|---|---|---|
+| T1 | Highkeep (Classic) | Third-floor noble quarters and banquet room | Tradeskill stations along the banquet table, banker in the vault side room, tribute master by the grand staircase |
+| T2 | Sanctus Seru (Luclin) | The Praesertum rotunda or the upper Arx Seru atrium | NPCs around the circular edge, tradeskill containers in the side alcoves |
+| T3 | Skyshrine (Velious) | The grand entry rotunda or Lord Yelinak's throne room | Banker and tribute master by the central fountain or dais, crafting stations along the pillared walkways |
+| T4 | Plane of Knowledge (`poknowledge`) | The Great Library interior: the main circular floor under the floating astrolabe | Tradeskill stations in the book-lined wings, banker, tribute master and utility NPCs in the central atrium |
+| T5 | Temple of Marr (`hohonorb`, decided 2026-11-13) | The main altar terrace | Tribute master and banker on the raised central dais, utility NPCs and tradeskill stations flanking the grand staircase |
+
+
+Decided 2026-11-13: Highkeep replaces the existing guild hall as T1. The existing guild hall stays only as the
+new-character landing zone. Until the Highkeep hall is set up, Phase 1's T1 still sends owners to the existing guild
+hall, and they move to Highkeep when it is ready.
 
 ### Layout
 
@@ -87,11 +122,19 @@ Everything costs Infamy to unlock and treasury platinum to buy. Amenities also n
 | General merchant (food, drink, reagents) | T1 | 2,000 | 100,000 |
 | Tradeskill stations (each bought separately) | T2 | 5,000 | 150,000 each |
 | Corpse summoner | T2 | 7,500 | 500,000 |
-| Buff NPC (the Bazaar buffs) | T2 | 10,000 | 750,000 |
+| Guild Hall Mystic buffs, tiers 1-5 (see below) | T1 | 2,500 to 50,000 | 100,000 to 2,000,000 |
 | Better regen bath, level 1 / level 2 | T3 | 15,000 / 30,000 | 1,000,000 / 3,000,000 |
 | Rift entrance | T3 | 20,000 | 2,000,000 |
 | Portal pool to popular zones | T4 | 40,000 | 5,000,000 |
 | Raid portal entrance | T4 | 50,000 | 5,000,000 |
+
+### Guild Hall Mystic (decided 2026-11-13, built in Phase 1)
+
+A buff NPC in the hall that casts player class spells (Temperance, damage shields, mana regen, haste and more) on
+a member and their pet when hailed. No cooldown. Five tiers, each bought in order with Infamy and treasury
+platinum, each with better spells: from Temperance, Clarity and Shield of Thorns at tier 1 to Conviction,
+Clairvoyance, Speed of Salik and Nettle Shield at tier 5. The full list and prices are in
+`utils/scripts/guild_halls/README.md`.
 
 ### Decorations *(draft)*
 
@@ -243,5 +286,5 @@ Changes needed:
 
 - Hall zones for each tier.
 - Store contents and every *draft* number above.
-- How players donate and check totals: an NPC, a command, or both.
+- ~~How players donate and check totals~~: an NPC only, the Guild Steward (decided 2026-11-13).
 - What a visitor sees when a guild has closed its hall.

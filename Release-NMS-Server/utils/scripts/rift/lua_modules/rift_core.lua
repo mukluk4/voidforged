@@ -379,6 +379,9 @@ function rift.complete(x, y, z, h)
     if not state.is_active then return end
     state.is_active = false
 
+    -- Read by global_npc.pl (plugins/guild_halls.pl) right after this, to pay guild Infamy for the clear
+    eq.set_data("gr_cleared_" .. eq.get_zone_instance_id(), tostring(state.tier), "3600")
+
     local clear_time = os.time() - state.start_time
     rift.announce(15, string.format("GREATER RIFT CLEARED! The Chrono-Anchor re-stitches the Fabric. Time: %02d:%02d (Tier %d)",
         math.floor(clear_time / 60), clear_time % 60, state.tier))

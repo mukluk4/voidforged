@@ -132,6 +132,9 @@ sub RaidPortalDeath {
 	}
 
 	quest::spawn2($RAID_EXIT, 0, 0, $x + 5, $y + 5, $z, $npc->GetHeading());
+
+	# Guild Infamy for every assigned member, by guild (plugins/guild_halls.pl)
+	plugin::GuildInfamyRaid(\@char_ids, $tier, $boss_id, $npc->GetCleanName());
 }
 
 # Character-scoped raid_cleared (highest raid tier cleared) unlocks that tier at the Prism_Augmenter

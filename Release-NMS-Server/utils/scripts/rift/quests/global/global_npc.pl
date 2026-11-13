@@ -91,6 +91,7 @@ sub EVENT_SAY {
 sub EVENT_DEATH_COMPLETE {
     plugin::CustomEventNPCDeathEntry($killer_id);
     plugin::RaidPortalDeath($npc, $x, $y, $z);
+    plugin::GuildInfamyNPCDeath($npc, $killer_id);
 
     if (defined($killed_corpse_id)) {
         my $corpse = $entity_list->GetCorpseByID($killed_corpse_id);
