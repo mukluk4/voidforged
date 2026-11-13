@@ -1,6 +1,6 @@
 -- Ancient Cragbeast Matriarch, raid portal version (loaded by txevu/script_init_v50.lua)
 -- A copy of acm.lua with three changes:
---   * a bearer's damage and resist buffs are set against her raid stats, not as fixed numbers
+--   * a bearer's damage, resist and regeneration buffs are set against her raid stats, not as fixed numbers
 --   * the hatchling and AE signals start the timers the matriarch actually runs
 --     (acm.lua starts "hatchling" and "ae" but checks "hatchlings" and "aoe")
 --   * the portal's wipe reset puts the bearers and handlers back
@@ -248,7 +248,8 @@ function matriarch_signal(e)
 	elseif e.signal == 1297051 then
 		portal.set_damage(e.self, 1, 1)
 	elseif e.signal == 297054 then
-		e.self:ModifyNPCStat("combat_hp_regen", "6000")
+		-- open world 6000 per tick on 2,105,145 HP (0.285%), kept as the same share of her raid HP
+		e.self:ModifyNPCStat("combat_hp_regen", tostring(math.floor(e.self:GetMaxHP() * 6000 / 2105145)))
 	elseif e.signal == 1297054 then
 		e.self:ModifyNPCStat("combat_hp_regen", "100")
 	elseif e.signal == 297050 then

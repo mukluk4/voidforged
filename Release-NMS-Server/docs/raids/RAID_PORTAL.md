@@ -156,7 +156,7 @@ they are.
 | 5 | Quarm | 223201 | potimeb | Own | Script written: vortexes every 50s, AE sets per head, heads at 76/51/26; no phase path |
 | 5 | Rallos Zek | 223168 | potimeb | Own | Script written: minions and boars at 90/75/50/25, rampage and flurry steps |
 | 5 | Terris Thule | 223075 | potimeb | Own | Script written: nightmare pairs walk in at 91/51/11 |
-| 5 | Vallon Zek | 223078 | potimeb | Own | Script written: arena tether, two copies at 51%; fights without Tallon |
+| 5 | Vallon Zek | 223078 | potimeb | Own | Script written: arena tether, two copies at 51%; Tallon Zek (223077) joins at 50% with Vallon's raid HP and damage, and the raid is paid when both are dead |
 | 5 | Innoruuk | 223167 | potimeb | Own | Script written: guardians and hatebringers at 75 and 20, idle adds pulled in |
 | 5 | Noqufiel | 296065 | inktuta | Own | Script written: True and Mirror swap every 10%, reveal at each 5%, state in zone variables |
 | 5 | Tunat`Muram Cuu Vauax | 298055 | tacvi | Own | Script written: second form only, eight boss phases 90 to 20 |
@@ -187,17 +187,17 @@ scaling (Noqufiel's HP carry-over, the Matriarch's bearer buffs) are set from a 
 |---|---|---|---|
 | 1 | Muzlakh, Solusek Ro | No v50 file; the open-world script runs as it is | Nothing in it depends on flags, the zone controller or version 0. Solusek's death unlocks doors 38/39, which the SQL copies |
 | 2 | Emperor Ssraeshza | Shared template, not Own | His script has no combat mechanics |
-| 3 | Tunare | Her open-world "zone assist" is replaced by calling 2 protectors on pull and every 60s | A fixed call is easier to tune per tier; review whether you want the original assist back |
+| 3 | Tunare | Her open-world "zone assist" is replaced by calling 2 protectors on pull and every 60s. Kept (user, 2026-11-12) | A fixed call is easier to tune per tier |
 | 4 | King Tormax | His 4 guards spawn with him and are also called on pull and every 5 min | His call for help does nothing without guards nearby |
 | 5 | All phased bosses | Fixed phase damage becomes a ratio of the boss's base damage | Fixed numbers would undo the tier scaling |
 | 6 | All phased bosses | A wipe reset sends signal 50 so phases re-arm | The controller only heals and moves the boss |
-| 7 | Quarm | Starts at his spawn point; no phase 6 path, no zone status or Zebuxoruk signals | The portal spawns him directly |
+| 7 | Quarm | Starts at his spawn point; no phase 6 path, no zone status or Zebuxoruk signals. Approved (user, 2026-11-12) | The portal spawns him directly |
 | 8 | Rallos Zek, Innoruuk (PoTime) | Spawn ready to fight, without their army of twelve | The army is part of the open-world phase controller |
-| 9 | Vallon Zek | Fights alone, without Tallon Zek | Tallon is a second boss with his own payout question; adding him is open |
+| 9 | Vallon Zek | Tallon Zek spawns at his open-world spot when Vallon reaches 50%, copies Vallon's raid HP and damage, and is depopped on a wipe reset. One payout, once both are dead (`RAID_PARTNERS` in `plugins/raid_portal.pl`). Decided by the user 2026-11-12 | Tallon's spot is also the raid's entry point, so he spawns among the raid |
 | 10 | Noqufiel | The True Image is the portal boss. The Mirror copies the True's HP and damage, because the global scaling would make it a 2% add | The pair respawns many times, so state is kept in zone variables |
 | 11 | Tunat | Only the second form, with its eight phases. The first form and phylacteries are skipped. A wipe respawns him fresh | The first form is a separate NPC that hands off on death |
-| 12 | Ancient Cragbeast Matriarch | A portal copy of the encounter (`acm_portal`), with two open-world bugs fixed: the hatchling and AE timers had mismatched names, so they never fired | It adds real difficulty; review whether to keep the fix |
-| 13 | Ancient Cragbeast Matriarch | The regeneration bearer's 6000 HP per tick is unchanged | Small against raid HP; scale it if testing shows it does nothing |
+| 12 | Ancient Cragbeast Matriarch | A portal copy of the encounter (`acm_portal`), with two open-world bugs fixed: the hatchling and AE timers had mismatched names, so they never fired | It adds real difficulty. Kept (user, 2026-11-12) |
+| 13 | Ancient Cragbeast Matriarch | The regeneration bearer's 6000 HP per tick is scaled to the same share of her raid HP (0.285% of max HP per tick). Decided by the user 2026-11-12 | A fixed 6000 does nothing against raid HP |
 | 14 | Zun`Muram Votal | His Pixtt come back 2s after a wipe reset, not 5 min | So the raid can try again at once |
 | 15 | Entry points | Some are guesses from spawn rows: Quarm (645 units away), Vallon (Tallon's spot), Tormax (500 units), Noqufiel (inside the room) | Check them in game |
 | 16 | Emperor Ssraeshza, Lord Inquisitor Seru | Both keep their bane requirement (special ability 22: melee immune except bane). Kept on purpose (user, 2026-11-08) | The portal scaling doesn't change special ability 22 |

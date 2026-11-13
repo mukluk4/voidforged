@@ -7,6 +7,12 @@ my $RAID_CURRENCY   = 3;        # Chronal Prisms
 my $RAID_VERSION    = 50;
 my $RAID_EXPIRES    = "7200";
 
+# Bosses fought together: the portal boss and its partners must all be dead before the raid is paid.
+# Vallon Zek calls Tallon Zek in at 50% (quests/potimeb/v50).
+my %RAID_PARTNERS = (
+	223078 => [223077],  # Vallon Zek: Tallon Zek
+);
+
 sub RaidPortalInfo {
 	my $instance_id = shift;
 	return () if !$instance_id;
@@ -86,7 +92,18 @@ sub RaidPortalDeath {
 
 	my $instance_id = plugin::RaidPortalInt(plugin::val('$instanceid'));
 	my ($tier, $size, $boss_id, $spellscale) = plugin::RaidPortalInfo($instance_id);
-	return if !$tier || $npc->GetNPCTypeID() != $boss_id;
+	return if !$tier;
+
+	# The portal boss or one of its partners; pay only once none of the others is still up
+	my $dead_id = $npc->GetNPCTypeID();
+	my @group   = ($boss_id, @{ $RAID_PARTNERS{$boss_id} || [] });
+	return if !grep { $_ == $dead_id } @group;
+	my $entity_list = plugin::val('$entity_list');
+	foreach my $id (@group) {
+		next if $id == $dead_id;
+		return if $entity_list->IsMobSpawnedByNpcTypeID($id);
+	}
+
 	return if quest::get_data("raid_paid_$instance_id") ne '';
 	quest::set_data("raid_paid_$instance_id", "1", $RAID_EXPIRES);
 
@@ -98,7 +115,6 @@ sub RaidPortalDeath {
 		. ($players == 1 ? "player" : "players"));
 
 	my $amount      = 1 << $tier;
-	my $entity_list = plugin::val('$entity_list');
 	foreach my $char_id (@char_ids) {
 		quest::delete_data("raid_active_$char_id");
 
