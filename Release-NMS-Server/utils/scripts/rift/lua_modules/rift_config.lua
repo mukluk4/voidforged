@@ -105,6 +105,60 @@ return {
             min_distance  = 30,   -- only players farther than this get pulled, never the one in melee
             land_distance = 10,   -- pulled players land this far in front of the champion
         },
+        warded   = {
+            every_pulses = 5,     -- a new ward every 5th pulse (~20s), replacing any ward left
+            absorb_pct   = 10,    -- each ward absorbs this percent of the champion's max HP
+        },
+        summoner = {
+            every_pulses = 5,     -- calls adds every 5th pulse (~20s)
+            adds         = 2,     -- per call
+            max_alive    = 4,     -- no new call while this many of its adds are still up
+        },
+        splitter = {
+            at_pct = 50,          -- splits into two at this HP percent, sharing what is left
+        },
+        thorns   = {
+            return_pct  = 10,     -- each melee hit on it deals this percent of the hit back to the attacker
+            max_hp_pct  = 3,      -- capped per hit at this percent of the attacker's max HP
+            spell       = 12720,  -- Thorns: only names the damage in chat
+        },
+        reflective = {
+            chance      = 25,     -- percent of direct spell hits (not DoT ticks) it turns back on the caster
+            max_hp_pct  = 15,     -- a reflected hit is capped at this percent of the caster's max HP
+        },
+        juggernaut = {
+            hp_mult     = 1.25,   -- extra HP on top of the champion bonus
+        },                        -- and immune to stun, snare, slow, mez, charm and fear
+        blinker  = {
+            every_pulses = 4,     -- teleports to the farthest player on its hate list every 4th pulse (~16s)
+            min_distance = 30,    -- only if that player is farther than this
+        },
+        nullifier = {
+            every_pulses = 4,     -- strips one beneficial buff from a random player on its hate list (~16s)
+        },
+        vampiric = {
+            heal_pct    = 30,     -- heals itself for this percent of the damage it deals
+            max_hp_pct  = 2,      -- capped per hit at this percent of its own max HP
+        },
+        phasing  = {
+            every_pulses = 4,     -- fades every 4th pulse (~16s): a warning emote, then immune to damage
+            warn_ms      = 2000,  -- time between the warning and the phase
+            phase_ms     = 3000,  -- how long it is immune
+        },
+        enraged  = {
+            at_pct       = 30,    -- enrages at this HP percent
+            damage_mult  = 1.5,   -- min and max hit times this
+            delay_mult   = 0.7,   -- attack delay times this (faster attacks)
+        },
+        storm    = {
+            every_pulses = 3,     -- chain lightning every 3rd pulse (~12s)
+            damage_mult  = 2,     -- the first hit is this times its own max melee hit
+            jumps        = 4,     -- extra players or pets it jumps to
+            jump_range   = 40,
+            falloff_pct  = 80,    -- each jump hits for this percent of the last
+            spell        = 1045,  -- Chain Lightning: only names the damage in chat
+        },
+        per_tiers = 100,          -- one more affix every 100 tiers: 1-99 one, 100-199 two, 200-299 three
     },
 
     -- Rift Guardian (boss)
@@ -112,6 +166,8 @@ return {
         enrage_ms       = 120000,
         pulse_ms        = 8000,
         hate_wipe_every = 3,      -- the phase-shift mechanic wipes hate every Nth pulse
+        affix_chance    = 50,     -- percent of Guardians that also roll a champion affix (no extra HP)
+        affix_exclude   = { Splitter = true },  -- a split Guardian would end the rift on the copy's death
         spells          = {
             enrage      = 3761,   -- Blind Rage: self, +65% haste, +250 ATK, -600 AC
             energy_wave = 3473,   -- Catastrophe: magic PBAoE, 850 dmg

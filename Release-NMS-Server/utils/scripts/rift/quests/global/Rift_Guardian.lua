@@ -4,6 +4,7 @@
 -- ============================================================================
 
 local rift = require("rift_core")
+local affixes = require("champion_affixes")
 
 -- Anachronisms: echoes of the zone's own bosses, torn from another point in time. Only models
 -- loaded for this zone render (others show as the default model), so the pool is per zone.
@@ -61,6 +62,10 @@ function event_spawn(e)
     npc:SetEntityVariable("pulse_count", "0")
 
     eq.set_timer("boss_pulse", PULSE_MS)
+
+    -- Some Guardians also roll a champion affix on top of their mechanic (no extra HP, never Splitter)
+    affixes.try_initialize(npc, { chance = cfg.affix_chance, hp_mult = 1, exclude = cfg.affix_exclude,
+                                  title = "Guardian" })
 end
 
 -- Enrage clock starts on first engage, not on spawn
@@ -73,6 +78,11 @@ end
 
 function event_timer(e)
     local npc = e.self
+
+    if string.sub(e.timer, 1, 6) == "affix_" then
+        affixes.on_timer(e)
+        return
+    end
 
     if e.timer == "enrage_timer" then
         eq.stop_timer("enrage_timer")
@@ -103,6 +113,20 @@ function event_timer(e)
             end
         end
     end
+end
+
+-- Warded and the other affixes that react to hits; the return value overrides the damage
+function event_damage_taken(e)
+    return affixes.on_damage(e)
+end
+
+-- Vampiric heals itself for part of what it deals
+function event_damage_given(e)
+    affixes.on_damage_given(e)
+end
+
+function event_death(e)
+    affixes.on_death(e.self)
 end
 
 function event_death_complete(e)

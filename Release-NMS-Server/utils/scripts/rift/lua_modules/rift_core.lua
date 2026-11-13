@@ -364,11 +364,14 @@ function rift.spawn_guardian(x, y, z, h)
     eq.spawn2(rift.NPC.GUARDIAN, 0, 0, x, y, z, h)
 end
 
--- Lets the Guardian summon archetype adds without them depopping themselves
+-- Lets the Guardian (and champions) summon archetype adds without them depopping themselves
 function rift.spawn_minion(npc_type_id, x, y, z, h)
+    ensure_state()
     state.allow_spawn = true
-    eq.spawn2(npc_type_id, 0, 0, x, y, z, h)
+    local ok, npc = pcall(eq.spawn2, npc_type_id, 0, 0, x, y, z, h)
     state.allow_spawn = false
+    if ok then return npc end
+    return nil
 end
 
 function rift.complete(x, y, z, h)

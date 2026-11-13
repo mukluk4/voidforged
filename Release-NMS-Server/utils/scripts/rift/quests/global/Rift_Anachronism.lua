@@ -63,8 +63,13 @@ function event_spawn(e)
     -- 2. Tier stat scaling (elites use the faster boss curve)
     rift.apply_tier_scaling(npc, rift.get_tier(), is_elite)
 
-    -- 3. 15% of archetypes roll a champion affix
-    affixes.try_initialize(npc)
+    -- 3. Executioners always roll affixes (their name already says Executioner, so no title and no
+    --    extra HP); 15% of other archetypes become champions. Summoned adds and copies never do.
+    if is_elite then
+        affixes.try_initialize(npc, { chance = 100, hp_mult = 1, title = false })
+    else
+        affixes.try_initialize(npc)
+    end
 end
 
 function event_timer(e)
@@ -76,6 +81,16 @@ function event_timer(e)
     affixes.on_timer(e)
 end
 
+-- Warded absorbs hits and Splitter watches its HP here; the return value overrides the damage
+function event_damage_taken(e)
+    return affixes.on_damage(e)
+end
+
+-- Vampiric heals itself for part of what it deals
+function event_damage_given(e)
+    affixes.on_damage_given(e)
+end
+
 function event_death(e)
     affixes.on_death(e.self)
 end
@@ -83,6 +98,9 @@ end
 function event_death_complete(e)
     local npc = e.self
     if not rift.in_rift() then return end
+
+    -- A champion's summoned adds and Splitter copies give no progress, so they can't be farmed
+    if affixes.is_summoned(npc) then return end
 
     local amount = rift.PROGRESS.TRASH
     if npc:GetNPCTypeID() == rift.NPC.ELITE or affixes.get(npc) then
