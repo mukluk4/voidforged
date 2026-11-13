@@ -104,6 +104,7 @@ function event_say(e)
         if active then
             eq.delete_data(rift.key_active(client:CharacterID()))
             eq.remove_from_instance_by_char_id(active.instance_id, client:CharacterID())
+            rift.end_instance_if_unheld(active.instance_id)
             e.self:Say("Then I will let that thread fall. The Fracture forgets you.")
             offer_rifts(e.self, client)
         else

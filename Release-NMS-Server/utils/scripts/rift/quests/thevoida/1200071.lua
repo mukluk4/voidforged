@@ -146,6 +146,7 @@ function event_say(e)
         if active then
             eq.delete_data(portal.key_active(client:CharacterID()))
             eq.remove_from_instance_by_char_id(active.instance_id, client:CharacterID())
+            rift.end_instance_if_unheld(active.instance_id)
             e.self:Say("That way is closed to you.")
         end
 

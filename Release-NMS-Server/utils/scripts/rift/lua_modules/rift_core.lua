@@ -464,4 +464,15 @@ function rift.send_to_hub(client)
     client:MovePC(rift.HUB_ZONE_ID, rift.HUB_X, rift.HUB_Y, rift.HUB_Z, rift.HUB_H)
 end
 
+-- After a "close": if no character is assigned to the instance any more, end it now. Its zone then
+-- shuts down about 20 seconds later instead of waiting out the 10-minute empty-zone timer, which
+-- frees the zone process for someone else.
+function rift.end_instance_if_unheld(instance_id)
+    if not instance_id or instance_id == 0 then return end
+    local held = eq.get_characters_in_instance(instance_id)
+    if held == nil or #held == 0 then
+        eq.update_instance_timer(instance_id, 1)
+    end
+end
+
 return rift
