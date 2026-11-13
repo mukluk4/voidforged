@@ -101,17 +101,27 @@ end
 
 function event_say(e)
     local client = e.other
-    if not client:GetGM() then return end
+    -- Open to everyone (2026-11-13). Testing a boss at any size skips the raid requirements, so it stays GM-only.
+    local is_gm = client:GetGM()
 
     -- Typed lines can carry stray spaces that a say link doesn't
     local message = e.message:lower():gsub("[%s%c]+", " "):match("^ *(.-) *$")
 
     if message:findi("hail") then
-        e.self:Say(string.format("Open raid tier %s %s %s %s %s, or test a boss at a raid size: %s",
-            link("tier 1"), link("tier 2"), link("tier 3"), link("tier 4"), link("tier 5"), link("bosses")))
+        local tiers = string.format("%s %s %s %s %s",
+            link("tier 1"), link("tier 2"), link("tier 3"), link("tier 4"), link("tier 5"))
+        if is_gm then
+            e.self:Say(string.format("Open raid tier %s, or test a boss at a raid size: %s", tiers, link("bosses")))
+        else
+            e.self:Say(string.format("Raid leader, open the way to raid tier %s. Tier N needs a deepest Greater Rift clear of N x 100 and a raid of %d to %d in The Void.",
+                tiers, portal.MIN_RAID, portal.MAX_RAID))
+        end
         if get_active(client:CharacterID()) then
             e.self:Say("You also have a fight open: " .. link("re-enter") .. " or " .. link("close") .. ".")
         end
+
+    elseif not is_gm and (message == "bosses" or message:findi("^test ")) then
+        return
 
     elseif message == "bosses" then
         -- One line per tier, each boss a link to test it at size 6
