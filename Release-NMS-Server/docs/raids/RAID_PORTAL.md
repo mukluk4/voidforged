@@ -192,7 +192,7 @@ scaling (Noqufiel's HP carry-over, the Matriarch's bearer buffs) are set from a 
 | 5 | All phased bosses | Fixed phase damage becomes a ratio of the boss's base damage | Fixed numbers would undo the tier scaling |
 | 6 | All phased bosses | A wipe reset sends signal 50 so phases re-arm | The controller only heals and moves the boss |
 | 7 | Quarm | Starts at his spawn point; no phase 6 path, no zone status or Zebuxoruk signals. Approved (user, 2026-11-12) | The portal spawns him directly |
-| 8 | Rallos Zek, Innoruuk (PoTime) | Spawn ready to fight, without their army of twelve | The army is part of the open-world phase controller |
+| 8 | Rallos Zek, Innoruuk (PoTime) | Spawn ready to fight, without their army of twelve; their in-fight adds are kept. No pre-fight army (user, 2026-11-12) | The army is part of the open-world phase controller |
 | 9 | Vallon Zek | Tallon Zek spawns at his open-world spot when Vallon reaches 50%, copies Vallon's raid HP and damage, and is depopped on a wipe reset. One payout, once both are dead (`RAID_PARTNERS` in `plugins/raid_portal.pl`). Decided by the user 2026-11-12 | Tallon's spot is also the raid's entry point, so he spawns among the raid |
 | 10 | Noqufiel | The True Image is the portal boss. The Mirror copies the True's HP and damage, because the global scaling would make it a 2% add | The pair respawns many times, so state is kept in zone variables |
 | 11 | Tunat | Only the second form, with its eight phases. The first form and phylacteries are skipped. A wipe respawns him fresh | The first form is a separate NPC that hands off on death |
