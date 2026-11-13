@@ -5914,28 +5914,40 @@ void Mob::CalcHeroicBonuses(StatBonuses* newbon)
 	}
 }
 
+// Multiclass: heroic INT/WIS mana and regen count if any of the character's classes uses that stat (was primary class only)
+bool Mob::HasHeroicCasterClass(bool intelligence) const
+{
+	for (uint8 class_id = Class::Warrior; class_id <= Class::Berserker; class_id++) {
+		if (HasClass(class_id) && (intelligence ? IsHeroicINTCasterClass(class_id) : IsHeroicWISCasterClass(class_id))) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void Mob::SetHeroicWisBonuses(StatBonuses* n)
 {
-	n->heroic_max_mana += IsHeroicWISCasterClass(GetClass()) ? GetHeroicWIS() * RuleR(Character, HeroicWisdomMultiplier) * 10 : 0;
-	n->heroic_mana_regen += IsHeroicWISCasterClass(GetClass()) ? GetHeroicWIS() * RuleR(Character, HeroicWisdomMultiplier) / 25 : 0;
+	n->heroic_max_mana += HasHeroicCasterClass(false) ? GetHeroicWIS() * RuleR(Character, HeroicWisdomMultiplier) * 10 : 0;
+	n->heroic_mana_regen += HasHeroicCasterClass(false) ? GetHeroicWIS() * RuleR(Character, HeroicWisdomMultiplier) / 25 : 0;
 	n->HealAmt += GetHeroicWIS() * RuleR(Character, HeroicWisdomIncreaseHealAmtMultiplier);
 
 	if (RuleB(Character, HeroicStatsUseDataBucketsToScale)) {
-		n->heroic_max_mana += IsHeroicWISCasterClass(GetClass()) ? GetHeroicWIS() * CheckHeroicBonusesDataBuckets(HeroicBonusBucket::WisMaxMana) * 10 : 0;
-		n->heroic_mana_regen += IsHeroicWISCasterClass(GetClass()) ? GetHeroicWIS() * CheckHeroicBonusesDataBuckets(HeroicBonusBucket::WisManaRegen) / 25 : 0;
+		n->heroic_max_mana += HasHeroicCasterClass(false) ? GetHeroicWIS() * CheckHeroicBonusesDataBuckets(HeroicBonusBucket::WisMaxMana) * 10 : 0;
+		n->heroic_mana_regen += HasHeroicCasterClass(false) ? GetHeroicWIS() * CheckHeroicBonusesDataBuckets(HeroicBonusBucket::WisManaRegen) / 25 : 0;
 		n->HealAmt += GetHeroicWIS() * CheckHeroicBonusesDataBuckets(HeroicBonusBucket::WisHealAmt);
 	}
 }
 
 void Mob::SetHeroicIntBonuses(StatBonuses* n)
 {
-	n->heroic_max_mana += IsHeroicINTCasterClass(GetClass()) ? GetHeroicINT() * RuleR(Character, HeroicIntelligenceMultiplier) * 10 : 0;
-	n->heroic_mana_regen += IsHeroicINTCasterClass(GetClass()) ? GetHeroicINT() * RuleR(Character, HeroicIntelligenceMultiplier) / 25 : 0;
+	n->heroic_max_mana += HasHeroicCasterClass(true) ? GetHeroicINT() * RuleR(Character, HeroicIntelligenceMultiplier) * 10 : 0;
+	n->heroic_mana_regen += HasHeroicCasterClass(true) ? GetHeroicINT() * RuleR(Character, HeroicIntelligenceMultiplier) / 25 : 0;
 	n->SpellDmg += GetHeroicINT() * RuleR(Character, HeroicIntelligenceIncreaseSpellDmgMultiplier);
 
 	if (RuleB(Character, HeroicStatsUseDataBucketsToScale)) {
-		n->heroic_max_mana += IsHeroicINTCasterClass(GetClass()) ? GetHeroicINT() * CheckHeroicBonusesDataBuckets(HeroicBonusBucket::IntMaxMana) * 10 : 0;
-		n->heroic_mana_regen += IsHeroicINTCasterClass(GetClass()) ? GetHeroicINT() * CheckHeroicBonusesDataBuckets(HeroicBonusBucket::IntManaRegen) / 25 : 0;
+		n->heroic_max_mana += HasHeroicCasterClass(true) ? GetHeroicINT() * CheckHeroicBonusesDataBuckets(HeroicBonusBucket::IntMaxMana) * 10 : 0;
+		n->heroic_mana_regen += HasHeroicCasterClass(true) ? GetHeroicINT() * CheckHeroicBonusesDataBuckets(HeroicBonusBucket::IntManaRegen) / 25 : 0;
 		n->SpellDmg += GetHeroicINT() * CheckHeroicBonusesDataBuckets(HeroicBonusBucket::IntSpellDmg);
 	}
 }

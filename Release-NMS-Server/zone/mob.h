@@ -366,6 +366,8 @@ public:
 	bool NegateSpellEffect(uint16 spell_id, int effect_id);
 	float GetActSpellRange(uint16 spell_id, float range);
 	int64 GetActSpellDamage(uint16 spell_id, int64 value, Mob* target = nullptr);
+	int GetHeroicSpellDamagePct() const;
+	bool HasHeroicCasterClass(bool intelligence) const;
 
 	int GetSharedSpellDamage();
 	int GetSharedHealAmount();

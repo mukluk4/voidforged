@@ -160,6 +160,26 @@ int Mob::GetSharedCriticalHealOverTime() {
 	return base + (GetOwner()->GetSharedCriticalHealOverTime() * RuleI(Spells, PetsScaleWithOwnerPercent) / 100);
 }
 
+// Players and bots with a pure caster among their classes: Heroic INT counts if they have
+// Magician, Necromancer, Wizard or Enchanter, Heroic WIS if they have Cleric, Druid or
+// Shaman (both add up when they have both). Every 4 points is +1% spell damage.
+int Mob::GetHeroicSpellDamagePct() const
+{
+	if (!IsOfClientBot()) {
+		return 0;
+	}
+
+	int heroic = 0;
+	if (HasClass(Class::Magician) || HasClass(Class::Necromancer) || HasClass(Class::Wizard) || HasClass(Class::Enchanter)) {
+		heroic += std::max(0, GetHeroicINT());
+	}
+	if (HasClass(Class::Cleric) || HasClass(Class::Druid) || HasClass(Class::Shaman)) {
+		heroic += std::max(0, GetHeroicWIS());
+	}
+
+	return heroic / 4;
+}
+
 int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target) {
 	if (spells[spell_id].target_type == ST_Self) {
 		return value;
@@ -170,38 +190,9 @@ int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target) {
 		value += value * DynamicItemsManager::GetSpellDamagePct(CastToClient()->dynamic_item_bonuses, spell_id) / 100;
 	}
 
-        bool heroic_stat_bonus = false;
-        // give heroic stat bonus if memorized
-        if (IsClient()) {
-                for (int i = 0; i < EQ::spells::SPELL_GEM_COUNT; ++i) {
-                        if (CastToClient()->GetPP().mem_spells[i] == spell_id) {
-                                heroic_stat_bonus = true;
-                                break;
-                        }
-                }
-        }
-        if (!heroic_stat_bonus) {
-				// AA abilities are class level 254, if its less than level 254, and its not a combat skill and not a combat proc, give the bonus
-                if (!((IsCombatSkill(spell_id) || IsCombatProc(spell_id)))) {
-                        for (uint8 class_id = Class::Warrior; class_id <= Class::Berserker; class_id++) {
-                                if (GetSpellLevelForCaster(spell_id) < UINT8_MAX) {
-                                        heroic_stat_bonus = true;
-                                        break;
-                                }
-                        }
-                }
-        }
-
-        if (heroic_stat_bonus) {
-
-
-		float scalar = 1.0f;
-		if (IsBeneficialSpell(spell_id)) {
-			scalar += GetHeroicWIS() / 1000.0f;
-		} else {
-			scalar += GetHeroicINT() / 1000.0f;
-		}
-		value *= scalar;
+	// Caster heroic stats: +1% spell damage per 4 Heroic INT/WIS (cast spells and procs)
+	if (const int heroic_pct = GetHeroicSpellDamagePct()) {
+		value += value * heroic_pct / 100;
 	}
 
 	if (IsNPC()) {
@@ -437,6 +428,11 @@ int64 Mob::GetActDoTDamage(uint16 spell_id, int64 value, Mob* target, bool from_
 	// Dynamic item element damage % (same as direct damage)
 	if (IsClient()) {
 		value += value * DynamicItemsManager::GetSpellDamagePct(CastToClient()->dynamic_item_bonuses, spell_id) / 100;
+	}
+
+	// Caster heroic stats (same as direct damage)
+	if (const int heroic_pct = GetHeroicSpellDamagePct()) {
+		value += value * heroic_pct / 100;
 	}
 
 	if (IsNPC()) {
